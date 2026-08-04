@@ -547,8 +547,8 @@ export const WelcomePage = ({ value, onChange, isExport }: { value?: string; onC
       { num: '0', title: 'DOT', desc: 'Center Dot only', symbol: '•' },
       { num: '1', title: 'SLASH', desc: 'Single slash (/)', symbol: '/' },
       { num: '2', title: 'BACKSLASH', desc: 'Single backslash (\\)', symbol: '\\' },
-      { num: '3', title: 'X', desc: 'Cross mark (X)', symbol: '✕' },
-      { num: '4', title: 'ASTERISK', desc: 'Asterisk (*)', symbol: '✱' },
+      { num: '3', title: 'X', desc: 'Cross mark (X)', symbol: 'X' },
+      { num: '4', title: 'ASTERISK', desc: 'Asterisk (*)', symbol: '*' },
       { num: '5', title: 'FILLED SQUARE', desc: 'Solid black square', symbol: '■' }
     ],
     illustrationImage: ''
@@ -756,8 +756,8 @@ export const MysteryPage = ({ value, onChange, isExport }: { value?: string; onC
       { mark: '•', code: '.', name: 'Dot', density: '75.4%' },
       { mark: '/', code: '1', name: 'Slash', density: '6.7%' },
       { mark: '\\', code: '2', name: 'Backslash', density: '2.3%' },
-      { mark: '✕', code: '3', name: 'Cross', density: '1.3%' },
-      { mark: '✱', code: '4', name: 'Asterisk', density: '8.5%' },
+      { mark: 'X', code: '3', name: 'Cross', density: '1.3%' },
+      { mark: '*', code: '4', name: 'Asterisk', density: '8.5%' },
       { mark: '■', code: '5', name: 'Filled Square', density: '5.9%' }
     ]
   };

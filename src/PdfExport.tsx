@@ -75,6 +75,7 @@ export const PdfDocument = ({ project, processedImages, isExportingSolutions, us
   };
 
   const cover = getParsed('coverBook', {
+    images: [],
     topSubtitle: 'ONE COLOR COLORING BOOK',
     subtitle2: 'Color by Number',
     mainTitle: 'MONOCHROME',
@@ -106,8 +107,8 @@ export const PdfDocument = ({ project, processedImages, isExportingSolutions, us
       { num: '0', title: 'DOT', desc: 'Center Dot only', symbol: '•' },
       { num: '1', title: 'SLASH', desc: 'Single slash (/)', symbol: '/' },
       { num: '2', title: 'BACKSLASH', desc: 'Single backslash (\\)', symbol: '\\' },
-      { num: '3', title: 'X', desc: 'Cross mark (X)', symbol: '✕' },
-      { num: '4', title: 'ASTERISK', desc: 'Asterisk (*)', symbol: '✱' },
+      { num: '3', title: 'X', desc: 'Cross mark (X)', symbol: 'X' },
+      { num: '4', title: 'ASTERISK', desc: 'Asterisk (*)', symbol: '*' },
       { num: '5', title: 'FILLED SQUARE', desc: 'Solid black square', symbol: '■' }
     ],
     illustrationImage: ''
@@ -119,8 +120,8 @@ export const PdfDocument = ({ project, processedImages, isExportingSolutions, us
       { mark: '•', code: '.', name: 'Dot', density: '75.4%' },
       { mark: '/', code: '1', name: 'Slash', density: '6.7%' },
       { mark: '\\', code: '2', name: 'Backslash', density: '2.3%' },
-      { mark: '✕', code: '3', name: 'Cross', density: '1.3%' },
-      { mark: '✱', code: '4', name: 'Asterisk', density: '8.5%' },
+      { mark: 'X', code: '3', name: 'Cross', density: '1.3%' },
+      { mark: '*', code: '4', name: 'Asterisk', density: '8.5%' },
       { mark: '■', code: '5', name: 'Filled Square', density: '5.9%' }
     ]
   });
@@ -160,20 +161,32 @@ export const PdfDocument = ({ project, processedImages, isExportingSolutions, us
       {!isExportingSolutions && (
         <>
           <Page size={PAGE_SIZE as any} style={{ ...styles.centerPage, justifyContent: 'space-between', paddingVertical: 80 * sf , paddingHorizontal: pagePadding * sf }}>
-            <View style={{ alignItems: 'center', width: '100%' }}>
-              <Text style={styles.topSubtitle}>{cover.topSubtitle}</Text>
-              <Text style={styles.subtitle2}>{cover.subtitle2}</Text>
-              <Text style={styles.coverTitle}>{cover.mainTitle}</Text>
-              <Text style={styles.coverTheme}>{cover.themeTitle}</Text>
-            </View>
-            {cover.templateImage && (
-               <View style={{ flexGrow: 1, width: '100%', alignItems: 'center', justifyContent: 'center', marginVertical: 20 }}>
-                 <PdfImage src={cover.templateImage} style={{ width: '90%', height: 450 * sf * sf, objectFit: 'contain' }} />
-               </View>
+            {(!cover.images || cover.images.length === 0) ? (
+              <>
+                <View style={{ alignItems: 'center', width: '100%' }}>
+                  <Text style={styles.topSubtitle}>{cover.topSubtitle}</Text>
+                  <Text style={styles.subtitle2}>{cover.subtitle2}</Text>
+                  <Text style={styles.coverTitle}>{cover.mainTitle}</Text>
+                  <Text style={styles.coverTheme}>{cover.themeTitle}</Text>
+                </View>
+                {cover.templateImage && (
+                   <View style={{ flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', marginVertical: 20 * sf }}>
+                     <PdfImage src={cover.templateImage} style={{ width: '90%', height: PAGE_SIZE[1] * 0.45, objectFit: 'contain' }} />
+                   </View>
+                )}
+                <View style={{ alignItems: 'center', width: '100%' }}>
+                  <Text style={styles.coverAuthor}>{cover.author}</Text>
+                </View>
+              </>
+            ) : (
+              <View style={{ flex: 1, width: '100%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', alignContent: 'center', padding: 20 * sf, gap: 20 * sf }}>
+                {cover.images.map((img, i) => (
+                   <View key={i} style={{ width: cover.images.length === 1 ? '100%' : (cover.images.length === 2 ? '100%' : '48%'), height: cover.images.length === 1 ? '100%' : (cover.images.length === 2 ? '48%' : '48%') }}>
+                     <PdfImage src={img} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
+                   </View>
+                ))}
+              </View>
             )}
-            <View style={{ alignItems: 'center', width: '100%' }}>
-              <Text style={styles.coverAuthor}>{cover.author}</Text>
-            </View>
           </Page>
 
                     <Page size={PAGE_SIZE as any} style={{ ...styles.centerPage, justifyContent: 'flex-start', paddingTop: 70 * sf , paddingHorizontal: pagePadding * sf }}>
