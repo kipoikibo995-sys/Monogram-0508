@@ -28,7 +28,7 @@ export function AdminView() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [pendingUpgrades, setPendingUpgrades] = useState<PendingUpgrade[]>([]);
-  const [activeTab, setActiveTab] = useState<'users' | 'pending'>('users');
+  const [activeTab, setActiveTab] = useState<'paid' | 'free' | 'pending'>('paid');
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -122,12 +122,20 @@ export function AdminView() {
 
         
         <div className="flex gap-4 border-b-2 border-black">
+          
           <button 
-            onClick={() => setActiveTab('users')}
-            className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-colors ${activeTab === 'users' ? 'bg-black text-white' : 'bg-white text-neutral-500 hover:text-black'}`}
+            onClick={() => setActiveTab('paid')}
+            className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-colors ${activeTab === 'paid' ? 'bg-black text-white' : 'bg-white text-neutral-500 hover:text-black'}`}
           >
-            Registered Users
+            Paid Users
           </button>
+          <button 
+            onClick={() => setActiveTab('free')}
+            className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-colors ${activeTab === 'free' ? 'bg-black text-white' : 'bg-white text-neutral-500 hover:text-black'}`}
+          >
+            Free / Locked
+          </button>
+  
           <button 
             onClick={() => setActiveTab('pending')}
             className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-colors flex items-center gap-2 ${activeTab === 'pending' ? 'bg-black text-white' : 'bg-white text-neutral-500 hover:text-black'}`}
@@ -135,7 +143,7 @@ export function AdminView() {
             Pending Upgrades {pendingUpgrades.length > 0 && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{pendingUpgrades.length}</span>}
           </button>
         </div>
-        {activeTab === 'users' ? (
+        {(activeTab === 'paid' || activeTab === 'free') ? (
           <>
         {/* Stats Row */}
         {!loading && (

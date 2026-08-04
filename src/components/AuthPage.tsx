@@ -96,17 +96,46 @@ export function AuthPage() {
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName });
-        await sendEmailVerification(userCredential.user);
         
-        await auth.signOut();
-        
-        setSuccessMsg('Sign up successful! Please check your email to verify.');
-        setIsLogin(true);
+        let isPaid = false;
+        try {
+          const checkRes = await fetch('/api/user/check-paid', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+          });
+          const data = await checkRes.json();
+          if (data.isPaid) isPaid = true;
+        } catch(e) { console.error("Check paid error:", e); }
+
+        if (!isPaid) {
+          await sendEmailVerification(userCredential.user);
+          await auth.signOut();
+          setSuccessMsg('Sign up successful! Please check your email to verify.');
+          setIsLogin(true);
+        } else {
+          // IPN paid user, no email verification needed, let them log in directly
+          // We don't sign them out, so App.tsx onAuthStateChanged will handle it
+        }
+  
         setPassword('');
         setCaptchaAnswer('');
       } else {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        if (!userCredential.user.emailVerified && email.toLowerCase() !== 'kojiacademy2026@gmail.com') {
+        
+          let isPaid = false;
+          try {
+            const checkRes = await fetch('/api/user/check-paid', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email })
+            });
+            const data = await checkRes.json();
+            if (data.isPaid) isPaid = true;
+          } catch(e) { console.error("Check paid error:", e); }
+
+          if (!userCredential.user.emailVerified && email.toLowerCase() !== 'kojiacademy2026@gmail.com' && !isPaid) {
+  
           setError('Please verify your email before logging in.');
           await auth.signOut();
           setLoading(false);
@@ -131,7 +160,18 @@ export function AuthPage() {
     setSuccessMsg('');
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      if (!userCredential.user.emailVerified && email.toLowerCase() !== 'kojiacademy2026@gmail.com') {
+      let isPaid = false;
+      try {
+        const checkRes = await fetch('/api/user/check-paid', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await checkRes.json();
+        if (data.isPaid) isPaid = true;
+      } catch(e) { console.error("Check paid error:", e); }
+
+      if (!userCredential.user.emailVerified && email.toLowerCase() !== 'kojiacademy2026@gmail.com' && !isPaid) {
         await sendEmailVerification(userCredential.user);
         setSuccessMsg('Verification email resent. Please check your inbox.');
         await auth.signOut();

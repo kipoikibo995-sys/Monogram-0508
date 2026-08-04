@@ -12,6 +12,7 @@ import { saveProject, listProjects, deleteProject, Project } from './db';
 import { BookText, Settings, Shield, Image as ImageIcon, FileText, Brush, Eraser, Undo, Trash2, Upload, Download, Settings2, Sparkles, Grid3X3, LayoutGrid, List, Printer, BookOpen, BarChart2, Wand2, ChevronDown, ChevronLeft, ChevronRight, Layers, ZoomIn, ZoomOut, Maximize, Plus, FolderOpen, LayoutDashboard, Calendar, Clock, HelpCircle, Save, LogOut, LogIn, User, Lock } from 'lucide-react';
 import { ImageSettings } from './types';
 import { AuthPage } from './components/AuthPage';
+import { SalesPage } from './components/SalesPage';
 import { TutorialView } from './components/TutorialView';
 import { SettingsView } from './components/SettingsView';
 import { AdminView } from './components/AdminView';
@@ -527,6 +528,8 @@ export default function App() {
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [activeBookFlowPage, setActiveBookFlowPage] = useState<'cover' | 'copyright' | 'welcome' | 'warmup' | 'pentesting' | 'mystery' | 'thankyou'>('cover');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [showSalesPage, setShowSalesPage] = useState(true);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userTierState, setUserTier] = useState<'free' | 'pro' | 'enterprise'>('free');
   const userTier = user?.email?.toLowerCase() === 'kojiacademy2026@gmail.com' ? 'enterprise' : userTierState;
@@ -546,6 +549,7 @@ export default function App() {
           const userSnap = await getDoc(userRef);
           
           if (!userSnap.exists()) {
+             setShowWelcomeModal(true);
              await setDoc(userRef, {
                uid: currentUser.uid,
                email: currentUser.email,
@@ -556,7 +560,7 @@ export default function App() {
                tier: currentUser.email?.toLowerCase() === 'kojiacademy2026@gmail.com' ? 'enterprise' : 'free',
                purchases: []
              });
-             setUserTier(currentUser.email?.toLowerCase() === 'kojiacademy2026@gmail.com' ? 'enterprise' : 'free');
+             setUserTier(currentUser?.email?.toLowerCase() === 'kojiacademy2026@gmail.com' ? 'enterprise' : 'free');
              
              // Check for pending upgrades
              try {
@@ -583,6 +587,7 @@ export default function App() {
              } catch(e) { console.error("Sync upgrades failed", e); }
           }
 
+          if (auth.currentUser?.uid !== currentUser.uid) return;
           unsubDoc = onSnapshot(userRef, (snap) => {
              if (snap.exists()) {
                 setUserTier(
@@ -596,7 +601,7 @@ export default function App() {
           console.error(e);
         }
       } else {
-        setUserTier(currentUser.email?.toLowerCase() === 'kojiacademy2026@gmail.com' ? 'enterprise' : 'free');
+        setUserTier(currentUser?.email?.toLowerCase() === 'kojiacademy2026@gmail.com' ? 'enterprise' : 'free');
         if (unsubDoc) unsubDoc();
       }
       setLoadingAuth(false);
@@ -1568,7 +1573,33 @@ export default function App() {
   }
 
   if (!user) {
-    return <AuthPage />;
+    return (
+      <AnimatePresence mode="wait">
+        {showSalesPage ? (
+          <motion.div
+            key="sales"
+            initial={{ opacity: 0, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, filter: 'blur(10px)' }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            className="w-full min-h-screen"
+          >
+            <SalesPage onLoginClick={() => setShowSalesPage(false)} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="auth"
+            initial={{ opacity: 0, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, filter: 'blur(10px)' }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            className="w-full min-h-screen"
+          >
+            <AuthPage />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
   }
 
   return (
