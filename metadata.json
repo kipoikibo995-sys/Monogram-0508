@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix \\Monogram Art Generator 3107",
+  "description": "A tool to convert images into beautiful monogram, ascii, and pattern-based typographic art.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

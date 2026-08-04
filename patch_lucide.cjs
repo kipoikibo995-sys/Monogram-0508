@@ -1,0 +1,4 @@
+const fs = require('fs');
+let code = fs.readFileSync('src/App.tsx', 'utf8');
+code = code.replace("import { BookText, Settings, Shield, Image as ImageIcon, FileText, Brush, Eraser, Undo, Trash2, Upload, Download, Settings2, Sparkles, Grid3X3, LayoutGrid, List, Printer, BookOpen, BarChart2, Wand2, ChevronDown, ChevronLeft, ChevronRight, Layers, ZoomIn, ZoomOut, Maximize, Plus, FolderOpen, LayoutDashboard, Calendar, Clock, HelpCircle, Save, LogOut, LogIn, User } from 'lucide-react';", "import { BookText, Settings, Shield, Image as ImageIcon, FileText, Brush, Eraser, Undo, Trash2, Upload, Download, Settings2, Sparkles, Grid3X3, LayoutGrid, List, Printer, BookOpen, BarChart2, Wand2, ChevronDown, ChevronLeft, ChevronRight, Layers, ZoomIn, ZoomOut, Maximize, Plus, FolderOpen, LayoutDashboard, Calendar, Clock, HelpCircle, Save, LogOut, LogIn, User, Lock } from 'lucide-react';");
+fs.writeFileSync('src/App.tsx', code);

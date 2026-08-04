@@ -1,0 +1,22 @@
+export type ImageSettings = {
+  gridCols: number;
+  cellSize: number;
+  brightness: number;
+  contrast: number;
+  gamma: number;
+  inkColor: string;
+  inkThickness: number;
+  showBgGrid: boolean;
+  showCoordinates: boolean;
+  viewMode: 'workbook' | 'solution';
+  renderStyle: 'shapes' | 'pixels';
+  pixelShape: 'square' | 'circle' | 'triangle' | 'hexagon' | 'diamond';
+  useDithering: boolean;
+  useSmoothing: boolean;
+  pageMargin: number;
+  trimSize: "8.5x11" | "6x9" | "8.5x8.5";
+  gutterMargin: number;
+  densityCodes: string[];
+  overrides?: Record<string, number>;
+  overridesHistory?: Record<string, number>[];
+};
