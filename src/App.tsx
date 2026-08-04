@@ -528,7 +528,8 @@ export default function App() {
   const [activeBookFlowPage, setActiveBookFlowPage] = useState<'cover' | 'copyright' | 'welcome' | 'warmup' | 'pentesting' | 'mystery' | 'thankyou'>('cover');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [userTier, setUserTier] = useState<'free' | 'pro' | 'enterprise'>('free');
+  const [userTierState, setUserTier] = useState<'free' | 'pro' | 'enterprise'>('free');
+  const userTier = user?.email?.toLowerCase() === 'kojiacademy2026@gmail.com' ? 'enterprise' : userTierState;
 
   useEffect(() => {
     let unsubDoc: (() => void) | null = null;
