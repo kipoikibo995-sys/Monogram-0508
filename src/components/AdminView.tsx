@@ -19,7 +19,7 @@ interface UserData {
   createdAt: number;
   lastLogin: number;
   status: 'active' | 'banned';
-  tier: 'free' | 'pro' | 'enterprise';
+  tier: 'free' | 'regular' | 'pro';
   purchases: any[];
 }
 
@@ -36,7 +36,7 @@ export function AdminView() {
       const snap = await getDocs(collection(db, 'users'));
       const data: UserData[] = [];
       snap.forEach(doc => {
-        data.push(doc.data() as UserData);
+        data.push({ ...doc.data(), uid: doc.id } as UserData);
       });
       setUsers(data.sort((a, b) => b.lastLogin - a.lastLogin));
     } catch (e) {
@@ -59,7 +59,7 @@ export function AdminView() {
     }
   };
 
-  const handleUpdateTier = async (uid: string, tier: 'free' | 'pro' | 'enterprise') => {
+  const handleUpdateTier = async (uid: string, tier: 'free' | 'regular' | 'pro') => {
     try {
       await updateDoc(doc(db, 'users', uid), { tier });
       setUsers(prev => prev.map(u => u.uid === uid ? { ...u, tier } : u));
@@ -161,8 +161,8 @@ export function AdminView() {
               <span className="text-3xl font-black text-black">{users.filter(u => Date.now() - u.lastLogin < 15 * 60 * 1000).length}</span>
             </div>
             <div className="border-2 border-black p-4 flex flex-col gap-2 bg-black text-white">
-              <span className="text-xs font-bold uppercase tracking-widest text-white/70 flex items-center gap-1.5"><ArrowUpCircle size={14}/> Pro/Ent Tier</span>
-              <span className="text-3xl font-black">{users.filter(u => u.tier === 'pro' || u.tier === 'enterprise').length}</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-white/70 flex items-center gap-1.5"><ArrowUpCircle size={14}/> Paid Tier</span>
+              <span className="text-3xl font-black">{users.filter(u => u.tier === 'regular' || u.tier === 'pro').length}</span>
             </div>
           </div>
         )}
@@ -219,8 +219,7 @@ export function AdminView() {
                           className="px-2 py-1 border-2 border-black text-xs font-bold uppercase bg-white text-black focus:outline-none focus:ring-0 cursor-pointer"
                         >
                           <option value="free">Free</option>
-                          <option value="pro">Pro</option>
-                          <option value="enterprise">Enterprise</option>
+                          <option value="regular">Regular</option><option value="pro">Pro</option>
                         </select>
                         
                         {u.status === 'banned' ? (

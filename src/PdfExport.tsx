@@ -30,7 +30,7 @@ interface PdfExportProps {
   project: Project;
   processedImages: ProcessedImage[];
   isExportingSolutions: boolean;
-  userTier?: 'free' | 'pro' | 'enterprise';
+  userTier?: 'free' | 'regular' | 'pro';
 }
 
 

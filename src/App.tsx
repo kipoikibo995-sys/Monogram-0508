@@ -9,7 +9,7 @@ import { BookFlow, CoverPage, CopyrightPage, WelcomePage, MysteryPage, TemplateP
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument, processImageForPdf } from './PdfExport';
 import { saveProject, listProjects, deleteProject, Project } from './db';
-import { BookText, Settings, Shield, Image as ImageIcon, FileText, Brush, Eraser, Undo, Trash2, Upload, Download, Settings2, Sparkles, Grid3X3, LayoutGrid, List, Printer, BookOpen, BarChart2, Wand2, ChevronDown, ChevronLeft, ChevronRight, Layers, ZoomIn, ZoomOut, Maximize, Plus, FolderOpen, LayoutDashboard, Calendar, Clock, HelpCircle, Save, LogOut, LogIn, User, Lock } from 'lucide-react';
+import { BookText, Settings, Shield, Image as ImageIcon, FileText, Brush, Eraser, Undo, Trash2, Upload, Download, Settings2, Sparkles, Grid3X3, LayoutGrid, List, Printer, BookOpen, BarChart2, Wand2, ChevronDown, ChevronLeft, ChevronRight, Layers, ZoomIn, ZoomOut, Maximize, Plus, FolderOpen, LayoutDashboard, Calendar, Clock, HelpCircle, Save, LogOut, LogIn, User, Lock, Crown, ArrowUpCircle } from 'lucide-react';
 import { ImageSettings } from './types';
 import { AuthPage } from './components/AuthPage';
 import { SalesPage } from './components/SalesPage';
@@ -531,8 +531,8 @@ export default function App() {
   const [showSalesPage, setShowSalesPage] = useState(true);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [userTierState, setUserTier] = useState<'free' | 'pro' | 'enterprise'>('free');
-  const userTier = user?.email?.toLowerCase() === 'kojiacademy2026@gmail.com' ? 'enterprise' : userTierState;
+  const [userTierState, setUserTier] = useState<'free' | 'regular' | 'pro'>('free');
+  const userTier = userTierState;
 
   useEffect(() => {
     let unsubDoc: (() => void) | null = null;
@@ -557,10 +557,10 @@ export default function App() {
                createdAt: Date.now(),
                lastLogin: Date.now(),
                status: 'active',
-               tier: currentUser.email?.toLowerCase() === 'kojiacademy2026@gmail.com' ? 'enterprise' : 'free',
+               tier: currentUser.email?.toLowerCase() === 'kojiacademy2026@gmail.com' ? 'pro' : 'free',
                purchases: []
              });
-             setUserTier(currentUser?.email?.toLowerCase() === 'kojiacademy2026@gmail.com' ? 'enterprise' : 'free');
+             setUserTier('free');
              
              // Check for pending upgrades
              try {
@@ -590,18 +590,14 @@ export default function App() {
           if (auth.currentUser?.uid !== currentUser.uid) return;
           unsubDoc = onSnapshot(userRef, (snap) => {
              if (snap.exists()) {
-                setUserTier(
-                  currentUser.email?.toLowerCase() === 'kojiacademy2026@gmail.com' 
-                    ? 'enterprise' 
-                    : (snap.data().tier || 'free')
-                );
+                setUserTier(snap.data().tier || 'free');
              }
           });
         } catch (e) {
           console.error(e);
         }
       } else {
-        setUserTier(currentUser?.email?.toLowerCase() === 'kojiacademy2026@gmail.com' ? 'enterprise' : 'free');
+        setUserTier('free');
         if (unsubDoc) unsubDoc();
       }
       setLoadingAuth(false);
@@ -2052,16 +2048,29 @@ export default function App() {
                   )}
                   <div className="flex flex-col flex-1 min-w-0">
                     <span className="text-sm font-bold text-neutral-900 truncate">{user.displayName || user.email}</span>
-                    {user.email === 'kojiacademy2026@gmail.com' ? (
-                      <span className="text-[10px] font-bold text-blue-600 uppercase">Admin</span>
-                    ) : (
-                      <span className="text-xs text-neutral-500 truncate">{user.email}</span>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {user.email === 'kojiacademy2026@gmail.com' ? (
+                        <span className="text-[10px] font-bold text-blue-600 uppercase">Admin</span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-neutral-500 uppercase">{userTier === 'free' ? 'Free Plan' : userTier === 'regular' ? 'Regular Plan' : 'Pro Plan'}</span>
+                      )}
+                      {userTier !== 'free' && <Crown size={12} className="text-amber-500" />}
+                    </div>
                   </div>
                 </div>
+                
+                {userTier !== 'pro' && (
+                  <button 
+                    onClick={() => window.open('https://warriorplus.com', '_blank')}
+                    className="w-full mt-1 flex items-center justify-center gap-2 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg hover:from-amber-600 hover:to-orange-600 shadow-sm transition-all"
+                  >
+                    <ArrowUpCircle size={14} /> Upgrade Now
+                  </button>
+                )}
+                
                 <button 
                   onClick={() => signOut(auth)}
-                  className="w-full mt-1 flex items-center justify-center gap-2 py-1.5 text-xs font-semibold text-neutral-600 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-50 hover:text-red-600 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-1.5 text-xs font-semibold text-neutral-600 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-50 hover:text-red-600 transition-colors"
                 >
                   <LogOut size={14} /> Log Out
                 </button>

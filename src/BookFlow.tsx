@@ -10,7 +10,7 @@ interface BookFlowProps {
   onUpdateProject: (project: Project) => void;
   activePage: PageType;
   onExport: () => void;
-  userTier?: 'free' | 'pro' | 'enterprise';
+  userTier?: 'free' | 'regular' | 'pro';
 }
 
 export const BookFlow: React.FC<BookFlowProps> = ({ project, onUpdateProject, activePage, onExport, userTier = 'free' }) => {
