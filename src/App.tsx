@@ -946,18 +946,23 @@ export default function App() {
   const fitToScreen = () => {
     const availableWidth = window.innerWidth - 288;
     const availableHeight = window.innerHeight - 128;
-    // Calculate best scale based on first canvas
+    // Calculate best scale based on target canvas
     let bestScale = 1;
-    const firstCanvas = canvasRefs.current[0];
-    if (firstCanvas) {
-      const canvasW = firstCanvas.width / (window.devicePixelRatio || 1);
-      const canvasH = firstCanvas.height / (window.devicePixelRatio || 1);
+    const targetCanvas = canvasRefs.current[selectedIndex] || canvasRefs.current.find(c => c !== null);
+    if (targetCanvas) {
+      const canvasW = targetCanvas.width / (window.devicePixelRatio || 1);
+      const canvasH = targetCanvas.height / (window.devicePixelRatio || 1);
       const scaleW = availableWidth / canvasW;
       const scaleH = availableHeight / canvasH;
       bestScale = Math.max(0.1, Math.min(scaleW, scaleH));
     } else {
       bestScale = Math.max(0.1, Math.min(availableWidth / 850, availableHeight / 1100));
     }
+    
+    if (layoutMode === 'grid') {
+      bestScale = bestScale * 0.48; // Scale down to comfortably fit multiple columns
+    }
+    
     setZoom(Math.floor(bestScale * 100));
   };
 
@@ -1322,10 +1327,10 @@ export default function App() {
     if (images.length === 0 || view !== 'editor') return;
     
     let tries = 0;
-    let timeoutId = null;
+    let timeoutId: any = null;
     const checkAndRender = () => {
-      const hasCanvas = canvasRefs.current.some(c => c !== null && c !== undefined);
-      if (hasCanvas) {
+      const allCanvasesMounted = images.every((_, i) => canvasRefs.current[i] !== null && canvasRefs.current[i] !== undefined);
+      if (allCanvasesMounted) {
         scheduleRender();
         setTimeout(fitToScreen, 100); // Auto fit when canvases are ready
       } else if (tries < 20) {
@@ -1343,9 +1348,10 @@ export default function App() {
     if (view === 'editor' && images.length > 0) {
       const handleResize = () => fitToScreen();
       window.addEventListener('resize', handleResize);
+      setTimeout(fitToScreen, 50);
       return () => window.removeEventListener('resize', handleResize);
     }
-  }, [view, images.length]);
+  }, [view, images.length, layoutMode]);
 
   const processFiles = async (files: File[]) => {
     let allowedFiles = files;
@@ -1359,15 +1365,26 @@ export default function App() {
 
     if (images.length === 0) setSelectedIndex(0);
     const loadedImages = await Promise.all(allowedFiles.map(file => {
-      return new Promise<{file: File, img: HTMLImageElement, settings: ImageSettings}>((resolve) => {
+      return new Promise<{file: File, img: HTMLImageElement}>((resolve) => {
         const url = URL.createObjectURL(file);
         const img = new Image();
-        img.onload = () => resolve({ file, img, settings: { ...defaultSettings } });
+        img.onload = () => resolve({ file, img });
         img.src = url;
       });
     }));
-    setImages(prev => [...prev, ...loadedImages as any]);
-      };
+    
+    setImages(prev => {
+      const currentSettings = prev.length > 0 ? (prev[selectedIndex]?.settings || prev[0].settings) : defaultSettings;
+      const newImagesWithSettings = loadedImages.map(info => ({
+        ...info,
+        settings: JSON.parse(JSON.stringify(currentSettings))
+      }));
+      return [...prev, ...newImagesWithSettings as any];
+    });
+    
+    // Auto-fit slightly later to ensure DOM update
+    setTimeout(fitToScreen, 150);
+  };
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -2361,7 +2378,7 @@ export default function App() {
           ) : (
             <div className={`relative min-w-full p-4 gap-6 print:p-0 print:gap-0 mx-auto ${
               layoutMode === 'grid' 
-                ? 'grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 place-items-center justify-center w-full' 
+                ? 'flex flex-wrap items-start justify-center gap-12 w-full' 
                 : 'w-max flex flex-col items-center justify-start'
             }`}>
               {images.map((imgObj, i) => (
