@@ -42,7 +42,7 @@ async function startServer() {
   app.use(express.json());
 
   // IPN Endpoint
-  app.post('/api/ipn/warriorplus', async (req, res) => {
+  app.post('/api/wplus/ipn', async (req, res) => {
     try {
       const data = req.body;
       console.log("Received WarriorPlus IPN:", data);
