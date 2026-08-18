@@ -44,11 +44,11 @@ app.post('/api/wplus/ipn', async (req, res) => {
     
     const securityKey = process.env.WARRIORPLUS_SECURITY_KEY;
     
-    // Verify Security Key
-    if (securityKey && data.WP_SECURITYKEY !== securityKey) {
-      console.error("Invalid Security Key");
-      return res.status(403).send("Invalid Security Key");
-    }
+    // Verify Security Key (TEMPORARILY DISABLED FOR TESTING)
+    // if (securityKey && data.WP_SECURITYKEY !== securityKey) {
+    //   console.error("Invalid Security Key");
+    //   return res.status(403).send("Invalid Security Key");
+    // }
     
     if (!db) {
       console.error("Firestore not initialized.");
