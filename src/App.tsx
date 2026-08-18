@@ -2078,7 +2078,7 @@ export default function App() {
                   </div>
                 </div>
                 
-                {userTier === 'free' && (
+                {userTier !== 'pro' && (
                   <button 
                     onClick={() => window.open('https://warriorplus.com', '_blank')}
                     className="w-full mt-1 flex items-center justify-center gap-2 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg hover:from-amber-600 hover:to-orange-600 shadow-sm transition-all"
