@@ -537,6 +537,10 @@ export default function App() {
   useEffect(() => {
     let unsubDoc: (() => void) | null = null;
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+      if (unsubDoc) {
+        unsubDoc();
+        unsubDoc = null;
+      }
       if (currentUser && !currentUser.emailVerified) {
         setUser(null);
         setLoadingAuth(false);
@@ -587,7 +591,6 @@ export default function App() {
              } catch(e) { console.error("Sync upgrades failed", e); }
           }
 
-          if (auth.currentUser?.uid !== currentUser.uid) return;
           unsubDoc = onSnapshot(userRef, (snap) => {
              if (snap.exists()) {
                 setUserTier(snap.data().tier || 'free');
@@ -1711,19 +1714,19 @@ export default function App() {
                     <>
                       <button onClick={() => { 
                         setIsExportMenuOpen(false); 
-                        if (userTier === 'free') { alert("Export SVG (Full photo) is a Pro feature. Please upgrade."); return; }
+                        if (userTier !== 'pro') { alert("Export SVG (Full photo) is a Pro feature. Please upgrade."); return; }
                         handleBulkExportSVG(); 
                       }} className="w-full text-left px-4 py-2 text-sm flex items-center justify-between transition-colors border-t border-neutral-100 mt-1 hover:bg-neutral-50 hover:text-neutral-900 text-neutral-700">
                         <div className="flex items-center gap-2"><Download size={14} /> Export SVG (Full photo)</div>
-                        {userTier === 'free' && <Lock size={12} className="text-neutral-400" />}
+                        {userTier !== 'pro' && <Lock size={12} className="text-neutral-400" />}
                       </button>
                       <button onClick={() => { 
                         setIsExportMenuOpen(false); 
-                        if (userTier === 'free') { alert("Export PNG (Full photo) is a Pro feature. Please upgrade."); return; }
+                        if (userTier !== 'pro') { alert("Export PNG (Full photo) is a Pro feature. Please upgrade."); return; }
                         handleBulkExportPNG(); 
                       }} className="w-full text-left px-4 py-2 text-sm flex items-center justify-between transition-colors mt-1 hover:bg-neutral-50 hover:text-neutral-900 text-neutral-700">
                         <div className="flex items-center gap-2"><Download size={14} /> Export PNG (Full photo)</div>
-                        {userTier === 'free' && <Lock size={12} className="text-neutral-400" />}
+                        {userTier !== 'pro' && <Lock size={12} className="text-neutral-400" />}
                       </button>
 
                       <div className="px-3 py-2 mt-1 text-[10px] font-bold text-neutral-400 uppercase tracking-wider bg-neutral-50 border-b border-t border-neutral-100">
@@ -1797,7 +1800,7 @@ export default function App() {
                         { id: 'mystery', title: 'Mystery Instructions', icon: <FileText size={14} />, isLocked: true },
                         { id: 'thankyou', title: 'Thank You Page', icon: <FileText size={14} />, isLocked: false },
                       ].map(page => {
-                        const isLockedForUser = page.isLocked && userTier === 'free';
+                        const isLockedForUser = page.isLocked && userTier !== 'pro';
                         return (
                         <button
                           key={page.id}
@@ -1869,7 +1872,7 @@ export default function App() {
                   {renderStyle === 'pixels' && (
                     <div className="flex bg-neutral-100/80 p-1 rounded-lg border border-neutral-200">
                       {['square', 'circle', 'triangle', 'hexagon', 'diamond'].map(shape => {
-                        const isLockedShape = shape !== 'square' && userTier === 'free';
+                        const isLockedShape = shape !== 'square' && userTier !== 'pro';
                         return (
                         <button
                           key={shape}
@@ -2066,17 +2069,16 @@ export default function App() {
                   <div className="flex flex-col flex-1 min-w-0">
                     <span className="text-sm font-bold text-neutral-900 truncate">{user.displayName || user.email}</span>
                     <div className="flex items-center gap-1">
-                      {user.email === 'kojiacademy2026@gmail.com' ? (
-                        <span className="text-[10px] font-bold text-blue-600 uppercase">Admin</span>
-                      ) : (
-                        <span className="text-[10px] font-bold text-neutral-500 uppercase">{userTier === 'free' ? 'Free Plan' : userTier === 'regular' ? 'Regular Plan' : 'Pro Plan'}</span>
+                      {user.email === 'kojiacademy2026@gmail.com' && (
+                        <span className="text-[10px] font-bold text-blue-600 uppercase mr-1">Admin •</span>
                       )}
+                      <span className="text-[10px] font-bold text-neutral-500 uppercase">{userTier === 'free' ? 'Free Plan' : userTier === 'regular' ? 'Regular Plan' : 'Pro Plan'}</span>
                       {userTier !== 'free' && <Crown size={12} className="text-amber-500" />}
                     </div>
                   </div>
                 </div>
                 
-                {userTier !== 'pro' && (
+                {userTier === 'free' && (
                   <button 
                     onClick={() => window.open('https://warriorplus.com', '_blank')}
                     className="w-full mt-1 flex items-center justify-center gap-2 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg hover:from-amber-600 hover:to-orange-600 shadow-sm transition-all"
@@ -2322,7 +2324,7 @@ export default function App() {
               transition={{ duration: 0.2 }}
               className="flex-1 flex overflow-hidden"
             >
-              <BookFlow project={currentProject} onUpdateProject={(p) => { setCurrentProject(p); setProjects(prev => prev.map(proj => proj.id === p.id ? p : proj)); }} activePage={activeBookFlowPage} onExport={handleBulkExportPDF} userTier={userTier} />
+              <BookFlow project={currentProject} onUpdateProject={(p) => { setCurrentProject(p); setProjects(prev => prev.map(proj => proj.id === p.id ? p : proj)); }} activePage={activeBookFlowPage} onExport={handleBulkExportPDF} userTier={userTier} renderStyle={activeSettings.renderStyle} />
             </motion.div>
           )}
           {view === 'editor' && (

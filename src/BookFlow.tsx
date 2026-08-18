@@ -3,6 +3,42 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Project, saveProject } from './db';
 import { Image as ImageIcon, FileText, Download, Upload, Type, Grid3X3, Trash2, ArrowLeft, Lock } from 'lucide-react';
 
+const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          // Use high quality JPEG to save space but retain enough quality
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        } else {
+          resolve(e.target?.result as string);
+        }
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
 type PageType = 'cover' | 'copyright' | 'welcome' | 'warmup' | 'pentesting' | 'mystery' | 'thankyou';
 
 interface BookFlowProps {
@@ -11,9 +47,10 @@ interface BookFlowProps {
   activePage: PageType;
   onExport: () => void;
   userTier?: 'free' | 'regular' | 'pro';
+  renderStyle?: 'shapes' | 'pixels';
 }
 
-export const BookFlow: React.FC<BookFlowProps> = ({ project, onUpdateProject, activePage, onExport, userTier = 'free' }) => {
+export const BookFlow: React.FC<BookFlowProps> = ({ project, onUpdateProject, activePage, onExport, userTier = 'free', renderStyle = 'shapes' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
@@ -67,10 +104,10 @@ export const BookFlow: React.FC<BookFlowProps> = ({ project, onUpdateProject, ac
         content = <CopyrightPage value={data.copyrightPage} onChange={(v) => handleUpdateData('copyrightPage', v)} />;
         break;
       case 'welcome':
-        content = <WelcomePage value={data.welcomePage} onChange={(v) => handleUpdateData('welcomePage', v)} />;
+        content = <WelcomePage value={data.welcomePage} onChange={(v) => handleUpdateData('welcomePage', v)} renderStyle={renderStyle} />;
         break;
       case 'mystery':
-        content = <MysteryPage value={data.mystery} onChange={(v) => handleUpdateData('mystery', v)} />;
+        content = <MysteryPage value={data.mystery} onChange={(v) => handleUpdateData('mystery', v)} renderStyle={renderStyle} />;
         break;
       case 'warmup':
         content = <TemplatePage title="Warm up practice" value={data.warmUpPractice} onChange={(v) => handleUpdateData('warmUpPractice', v)} type="warmup" />;
@@ -86,7 +123,7 @@ export const BookFlow: React.FC<BookFlowProps> = ({ project, onUpdateProject, ac
     }
 
     const isLockedPage = activePage === 'warmup' || activePage === 'pentesting' || activePage === 'mystery';
-    const showLock = isLockedPage && userTier === 'free';
+    const showLock = isLockedPage && userTier !== 'pro';
 
     if (showLock) {
       return (
@@ -191,35 +228,33 @@ export const CoverPage = ({ value, onChange, isExport }: { value?: string; onCha
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleFiles = (files: FileList | File[], isTemplateMode: boolean) => {
+  const handleFiles = async (files: FileList | File[], isTemplateMode: boolean) => {
     if (isTemplateMode) {
       const file = Array.from(files).find(f => f.type.startsWith('image/'));
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        handleChange('templateImage', e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const resized = await resizeImage(file, 800, 800);
+        handleChange('templateImage', resized);
+      } catch (e) {
+        console.error("Failed to resize image", e);
+      }
     } else {
       const newImages = [...parsedValue.images];
-      let added = 0;
       const remainingSlots = 4 - newImages.length;
       if (remainingSlots <= 0) return;
 
       const filesArray = Array.from(files).filter(f => f.type.startsWith('image/')).slice(0, remainingSlots);
       if (filesArray.length === 0) return;
       
-      filesArray.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          newImages.push(e.target?.result as string);
-          added++;
-          if (added === filesArray.length) {
-            handleChange('images', newImages);
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+      for (const file of filesArray) {
+        try {
+          const resized = await resizeImage(file, 800, 800);
+          newImages.push(resized);
+        } catch (e) {
+          console.error("Failed to resize image", e);
+        }
+      }
+      handleChange('images', newImages);
     }
   };
 
@@ -533,17 +568,28 @@ export const CopyrightPage = ({ value, onChange, isExport }: { value?: string; o
 
 
 // --- WelcomePage Component ---
-export const WelcomePage = ({ value, onChange, isExport }: { value?: string; onChange: (v: string) => void; isExport?: boolean }) => {
+export const WelcomePage = ({ value, onChange, isExport, renderStyle = 'shapes' }: { value?: string; onChange: (v: string) => void; isExport?: boolean; renderStyle?: 'shapes' | 'pixels' }) => {
+  const isPixels = renderStyle === 'pixels';
+  
   let parsedValue = {
     title: 'WELCOME TO MONOCHROME COLOR QUEST',
     intro: 'Discover the relaxing joy of revealing beautiful monochrome artwork—\none mark at a time.\nInside this book you\'ll uncover 101 hidden illustrations, including\nmajestic wildlife, adorable pets, colorful birds and more',
     howToTitle: 'HOW TO USE THIS BOOK',
-    howToSteps: 'Each square contains a number.\n\nMatch the number with the symbol\nshown in the legend below the\npuzzle.\n\nUsing a black pen, fill every square\nwith the correct symbol.',
+    howToSteps: isPixels 
+      ? 'Each square contains a number.\n\nMatch the number with the shade\nshown in the legend below the\npuzzle.\n\nUsing a gray/black pen or pencil, fill every square\nwith the correct shade.'
+      : 'Each square contains a number.\n\nMatch the number with the symbol\nshown in the legend below the\npuzzle.\n\nUsing a black pen, fill every square\nwith the correct symbol.',
     penTitle: 'PEN RECOMMENDATIONS',
     penIntro: 'For the best results, we\nrecommend:',
-    penList: ['Fine liner (0.4–0.6 mm)', 'Black gel pen', 'Black ballpoint pen'],
+    penList: isPixels ? ['Different grades of pencils', 'Gray markers', 'Black pen for darkest shade'] : ['Fine liner (0.4–0.6 mm)', 'Black gel pen', 'Black ballpoint pen'],
     penOutro: 'Avoid permanent markers or\nalcohol-based markers, as they\nmay bleed through the paper.\n\nIf you\'re using a very wet pen,\nplace a blank sheet behind the\npage to protect the next puzzle.',
-    legend: [
+    legend: isPixels ? [
+      { num: '0', title: 'WHITE', desc: 'Leave empty', symbol: '' },
+      { num: '1', title: 'VERY LIGHT', desc: 'Fill with very light shade', symbol: '' },
+      { num: '2', title: 'LIGHT', desc: 'Fill with light shade', symbol: '' },
+      { num: '3', title: 'MEDIUM', desc: 'Fill with medium shade', symbol: '' },
+      { num: '4', title: 'DARK', desc: 'Fill with dark shade', symbol: '' },
+      { num: '5', title: 'BLACK', desc: 'Solid black', symbol: '■' }
+    ] : [
       { num: '0', title: 'DOT', desc: 'Center Dot only', symbol: '•' },
       { num: '1', title: 'SLASH', desc: 'Single slash (/)', symbol: '/' },
       { num: '2', title: 'BACKSLASH', desc: 'Single backslash (\\)', symbol: '\\' },
@@ -557,12 +603,46 @@ export const WelcomePage = ({ value, onChange, isExport }: { value?: string; onC
   try {
     if (value) {
       if (value.startsWith('{')) {
-        parsedValue = { ...parsedValue, ...JSON.parse(value) };
+        const parsed = JSON.parse(value);
+        // If the user's saved data has the old legend/text, we might want to override it if they switched modes
+        // But for safety, we just merge. If we want to force the new text, we could check if it matches the other mode's defaults.
+        // Let's just merge. If they switch modes, they might need to reset or the text will stay as symbols.
+        // Actually, to make it seamless, if the user hasn't explicitly customized, we can auto-switch.
+        parsedValue = { ...parsedValue, ...parsed };
       } else {
         parsedValue.intro = value;
       }
     }
   } catch(e) {}
+
+  // Override text if they are using default shapes text but switched to pixels
+  if (isPixels && parsedValue.howToSteps.includes('with the correct symbol')) {
+    parsedValue.howToSteps = 'Each square contains a number.\n\nMatch the number with the shade\nshown in the legend below the\npuzzle.\n\nUsing a gray/black pen or pencil, fill every square\nwith the correct shade.';
+    if (parsedValue.legend[0]?.title === 'DOT') {
+      parsedValue.legend = [
+        { num: '0', title: 'WHITE', desc: 'Leave empty', symbol: '' },
+        { num: '1', title: 'VERY LIGHT', desc: 'Fill with very light shade', symbol: '' },
+        { num: '2', title: 'LIGHT', desc: 'Fill with light shade', symbol: '' },
+        { num: '3', title: 'MEDIUM', desc: 'Fill with medium shade', symbol: '' },
+        { num: '4', title: 'DARK', desc: 'Fill with dark shade', symbol: '' },
+        { num: '5', title: 'BLACK', desc: 'Solid black', symbol: '■' }
+      ];
+      parsedValue.penList = ['Different grades of pencils', 'Gray markers', 'Black pen for darkest shade'];
+    }
+  } else if (!isPixels && parsedValue.howToSteps.includes('with the correct shade')) {
+    parsedValue.howToSteps = 'Each square contains a number.\n\nMatch the number with the symbol\nshown in the legend below the\npuzzle.\n\nUsing a black pen, fill every square\nwith the correct symbol.';
+    if (parsedValue.legend[0]?.title === 'WHITE') {
+      parsedValue.legend = [
+        { num: '0', title: 'DOT', desc: 'Center Dot only', symbol: '•' },
+        { num: '1', title: 'SLASH', desc: 'Single slash (/)', symbol: '/' },
+        { num: '2', title: 'BACKSLASH', desc: 'Single backslash (\\)', symbol: '\\' },
+        { num: '3', title: 'X', desc: 'Cross mark (X)', symbol: 'X' },
+        { num: '4', title: 'ASTERISK', desc: 'Asterisk (*)', symbol: '*' },
+        { num: '5', title: 'FILLED SQUARE', desc: 'Solid black square', symbol: '■' }
+      ];
+      parsedValue.penList = ['Fine liner (0.4–0.6 mm)', 'Black gel pen', 'Black ballpoint pen'];
+    }
+  }
 
   const handleChange = (key: string, val: any) => {
     onChange(JSON.stringify({ ...parsedValue, [key]: val }));
@@ -592,14 +672,15 @@ export const WelcomePage = ({ value, onChange, isExport }: { value?: string; onC
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        handleChange('illustrationImage', event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const resized = await resizeImage(file, 800, 800);
+        handleChange('illustrationImage', resized);
+      } catch (err) {
+        console.error("Failed to resize image", err);
+      }
     }
   };
 
@@ -697,7 +778,9 @@ export const WelcomePage = ({ value, onChange, isExport }: { value?: string; onC
                   />
                 </div>
                 <div className="w-14 h-10 flex items-center justify-center border border-neutral-300 bg-white shadow-sm mr-1 text-lg font-bold">
-                   {row.symbol === '■' ? <div className="w-5 h-5 bg-black"></div> : (
+                   {isPixels ? (
+                     <div className="w-full h-full" style={{ backgroundColor: ['#ffffff', '#e5e5e5', '#cccccc', '#999999', '#666666', '#333333', '#000000'][i + 1] }}></div>
+                   ) : row.symbol === '■' ? <div className="w-5 h-5 bg-black"></div> : (
                      <input 
                        value={row.symbol}
                        onChange={(e) => handleLegendChange(i, 'symbol', e.target.value)}
@@ -749,17 +832,28 @@ export const WelcomePage = ({ value, onChange, isExport }: { value?: string; onC
 };
 
 // --- MysteryPage Component ---
-export const MysteryPage = ({ value, onChange, isExport }: { value?: string; onChange: (v: string) => void; isExport?: boolean }) => {
-  let parsedValue = {
-    title: 'Mystery #01',
-    marks: [
+export const MysteryPage = ({ value, onChange, isExport, renderStyle = 'shapes' }: { value?: string; onChange: (v: string) => void; isExport?: boolean; renderStyle?: 'shapes' | 'pixels' }) => {
+  const isPixels = renderStyle === 'pixels';
+  
+  let defaultMarks = isPixels ? [
+      { mark: '', code: '0', name: 'White', density: '75.4%' },
+      { mark: '', code: '1', name: 'Very Light Gray', density: '6.7%' },
+      { mark: '', code: '2', name: 'Light Gray', density: '2.3%' },
+      { mark: '', code: '3', name: 'Medium Gray', density: '1.3%' },
+      { mark: '', code: '4', name: 'Dark Gray', density: '8.5%' },
+      { mark: '■', code: '5', name: 'Black', density: '5.9%' }
+  ] : [
       { mark: '•', code: '.', name: 'Dot', density: '75.4%' },
       { mark: '/', code: '1', name: 'Slash', density: '6.7%' },
       { mark: '\\', code: '2', name: 'Backslash', density: '2.3%' },
       { mark: 'X', code: '3', name: 'Cross', density: '1.3%' },
       { mark: '*', code: '4', name: 'Asterisk', density: '8.5%' },
       { mark: '■', code: '5', name: 'Filled Square', density: '5.9%' }
-    ]
+  ];
+
+  let parsedValue = {
+    title: 'Mystery #01',
+    marks: defaultMarks
   };
 
   try {
@@ -769,6 +863,12 @@ export const MysteryPage = ({ value, onChange, isExport }: { value?: string; onC
       }
     }
   } catch(e) {}
+
+  if (isPixels && parsedValue.marks[0]?.name === 'Dot') {
+    parsedValue.marks = defaultMarks;
+  } else if (!isPixels && parsedValue.marks[0]?.name === 'White') {
+    parsedValue.marks = defaultMarks;
+  }
 
   const handleChange = (key: string, val: any) => {
     onChange(JSON.stringify({ ...parsedValue, [key]: val }));
@@ -802,7 +902,9 @@ export const MysteryPage = ({ value, onChange, isExport }: { value?: string; onC
               <div key={i} className="flex w-full items-center py-3 border-b border-neutral-100 last:border-b-0">
                 <div className="w-24 flex justify-center">
                   <div className="w-12 h-12 border border-black flex items-center justify-center text-3xl font-bold bg-white">
-                    {row.mark === '■' ? <div className="w-6 h-6 bg-black"></div> : (
+                    {isPixels ? (
+                      <div className="w-full h-full" style={{ backgroundColor: ['#ffffff', '#e5e5e5', '#cccccc', '#999999', '#666666', '#333333', '#000000'][i + 1] }}></div>
+                    ) : row.mark === '■' ? <div className="w-6 h-6 bg-black"></div> : (
                       <input 
                         value={row.mark}
                         onChange={(e) => handleMarkChange(i, 'mark', e.target.value)}

@@ -39,8 +39,42 @@ export const saveProject = async (project: Project, imagesData?: any[]) => {
     return;
   }
   
+  // Create a copy for Firebase and strip out extremely large base64 strings to avoid 1MB limit
+  const firebaseProject = JSON.parse(JSON.stringify(project));
+  if (firebaseProject.bookFlowData) {
+    for (const key of Object.keys(firebaseProject.bookFlowData)) {
+      const val = firebaseProject.bookFlowData[key as keyof BookFlowData];
+      if (typeof val === 'string' && val.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(val);
+          let modified = false;
+          const MAX_LEN = 300000; // ~300KB
+          
+          if (parsed.images && Array.isArray(parsed.images)) {
+            parsed.images = parsed.images.map((img: string) => {
+              if (img && img.length > MAX_LEN) { modified = true; return ''; }
+              return img;
+            });
+          }
+          if (parsed.templateImage && parsed.templateImage.length > MAX_LEN) {
+            parsed.templateImage = '';
+            modified = true;
+          }
+          if (parsed.illustrationImage && parsed.illustrationImage.length > MAX_LEN) {
+            parsed.illustrationImage = '';
+            modified = true;
+          }
+          
+          if (modified) {
+            firebaseProject.bookFlowData[key as keyof BookFlowData] = JSON.stringify(parsed);
+          }
+        } catch (e) {}
+      }
+    }
+  }
+
   // Sync to Firestore (non-blocking)
-  setDoc(doc(db, 'projects', project.id), project).catch(err => {
+  setDoc(doc(db, 'projects', firebaseProject.id), firebaseProject).catch(err => {
     console.error("Firebase sync error:", err);
   });
 };
@@ -70,8 +104,16 @@ export const listProjects = async (): Promise<Project[]> => {
     const projects = snap.docs.map(d => d.data() as Project);
     
     // Also save fetched projects to local idb for offline access
-    for (const p of projects) {
-      await set(`proj_${p.id}`, p);
+    for (let i = 0; i < projects.length; i++) {
+      let p = projects[i];
+      const localP = await get(`proj_${p.id}`) as Project;
+      // If local data exists and is not older than the remote data, keep local.
+      // This prevents overwriting large un-stripped images with stripped Firebase versions
+      if (localP && localP.updatedAt >= p.updatedAt) {
+        projects[i] = localP;
+      } else {
+        await set(`proj_${p.id}`, p);
+      }
     }
     
     return projects.sort((a, b) => b.updatedAt - a.updatedAt);
