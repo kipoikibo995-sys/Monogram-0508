@@ -66,7 +66,8 @@ async function startServer() {
       const customData = data.WP_CUSTOM; // If you pass UID via affiliate link
       
       if (!buyerEmail) {
-        return res.status(400).send("No buyer email provided.");
+        console.log("No buyer email provided in IPN data. This is expected during WarriorPlus testing.");
+        return res.status(200).send("IPN Processed (Test/Empty)");
       }
       
       // Look up user by email

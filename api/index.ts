@@ -10,6 +10,11 @@ const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 if (process.env.FIREBASE_PROJECT_ID && privateKey && privateKey.includes('BEGIN PRIVATE KEY')) {
   try {
     if (!getApps().length) {
+      console.log("Attempting Firebase Admin init with:", { 
+         projectId: process.env.FIREBASE_PROJECT_ID, 
+         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+         hasPrivateKey: !!privateKey
+      });
       initializeApp({
         credential: cert({
           projectId: process.env.FIREBASE_PROJECT_ID,
@@ -28,6 +33,10 @@ if (process.env.FIREBASE_PROJECT_ID && privateKey && privateKey.includes('BEGIN 
 }
 
 const db = getApps().length ? getFirestore() : null;
+
+if (!db) {
+  console.error("CRITICAL: Firebase db is null. Check environment variables formatting.");
+}
 
 const app = express();
 app.use(cors());
@@ -60,7 +69,8 @@ app.post('/api/wplus/ipn', async (req, res) => {
     const itemName = data.WP_ITEM_NAME;
     
     if (!buyerEmail) {
-      return res.status(400).send("No buyer email provided.");
+      console.log("No buyer email provided in IPN data. This is expected during WarriorPlus testing.");
+      return res.status(200).send("IPN Processed (Test/Empty)");
     }
     
     // Look up user by email
