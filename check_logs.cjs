@@ -18,17 +18,9 @@ const cfg = JSON.parse(fs.readFileSync('./firebase-applet-config.json', 'utf8'))
 const db = getFirestore(cfg.databaseId || cfg.firestoreDatabaseId);
 
 async function check() {
-  const email = 'kipoikibo995@gmail.com';
-  console.log(`Checking DB for ${email}...`);
-  
-  const users = await db.collection('users').where('email', '==', email).get();
-  console.log(`User found: ${users.size}`);
-  users.forEach(d => console.log('User data:', d.data()));
-
-  const pending = await db.collection('pending_upgrades').get();
-  console.log(`Total Pending upgrades found: ${pending.size}`);
-  pending.forEach(d => console.log('Pending data:', d.data()));
-  
+  const logs = await db.collection('ipn_logs').orderBy('timestamp', 'desc').limit(5).get();
+  console.log(`Total IPN logs found: ${logs.size}`);
+  logs.forEach(d => console.log('Log data:', JSON.stringify(d.data(), null, 2)));
   process.exit(0);
 }
 check();

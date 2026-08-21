@@ -56,10 +56,18 @@ async function startServer() {
   app.post('/api/wplus/ipn', async (req, res) => {
     try {
       const data = req.body;
-      const logEntry = `\n[${new Date().toISOString()}] IPN Received:\nHeaders: ${JSON.stringify(req.headers)}\nBody: ${JSON.stringify(data)}\n`;
-      fs.appendFileSync('ipn_debug.log', logEntry);
-      
       console.log("Received WarriorPlus IPN:", data);
+      try {
+        if (db) {
+          await db.collection('ipn_logs').add({
+            timestamp: Date.now(),
+            body: data,
+            headers: req.headers
+          });
+        }
+      } catch (e) {
+        console.error("Failed to log IPN to db", e);
+      }
       
       const securityKey = process.env.WARRIORPLUS_SECURITY_KEY;
       
