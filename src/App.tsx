@@ -552,8 +552,19 @@ export default function App() {
           const userRef = doc(db, 'users', currentUser.uid);
           const userSnap = await getDoc(userRef);
           
+          if (userSnap.exists()) {
+             setUserTier(userSnap.data().tier || 'free');
+          }
+
+          unsubDoc = onSnapshot(userRef, (snap) => {
+             if (snap.exists()) {
+                setUserTier(snap.data().tier || 'free');
+             }
+          });
+          
           if (!userSnap.exists()) {
              setShowWelcomeModal(true);
+             const defaultTier = currentUser.email?.toLowerCase() === 'kojiacademy2026@gmail.com' ? 'pro' : 'free';
              await setDoc(userRef, {
                uid: currentUser.uid,
                email: currentUser.email,
@@ -561,10 +572,10 @@ export default function App() {
                createdAt: Date.now(),
                lastLogin: Date.now(),
                status: 'active',
-               tier: currentUser.email?.toLowerCase() === 'kojiacademy2026@gmail.com' ? 'pro' : 'free',
+               tier: defaultTier,
                purchases: []
              });
-             setUserTier('free');
+             setUserTier(defaultTier);
              
              // Check for pending upgrades
              try {
@@ -590,12 +601,6 @@ export default function App() {
                 });
              } catch(e) { console.error("Sync upgrades failed", e); }
           }
-
-          unsubDoc = onSnapshot(userRef, (snap) => {
-             if (snap.exists()) {
-                setUserTier(snap.data().tier || 'free');
-             }
-          });
         } catch (e) {
           console.error(e);
         }

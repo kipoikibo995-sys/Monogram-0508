@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Shield, ShieldAlert, ArrowUpCircle, Ban, Search, CheckCircle, Clock, Users, UserCheck, Activity } from 'lucide-react';
+import { Shield, ShieldAlert, ArrowUpCircle, Ban, Search, CheckCircle, Clock, Users, UserCheck, Activity, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface PendingUpgrade {
   id: string;
@@ -29,6 +29,7 @@ export function AdminView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [pendingUpgrades, setPendingUpgrades] = useState<PendingUpgrade[]>([]);
   const [activeTab, setActiveTab] = useState<'paid' | 'free' | 'pending'>('paid');
+  const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -188,11 +189,18 @@ export function AdminView() {
                     <td colSpan={5} className="py-8 text-center text-black font-bold uppercase">No users found.</td>
                   </tr>
                 ) : filteredUsers.map((u, i) => (
-                  <tr key={u.uid} className={`border-b border-black ${i % 2 === 0 ? 'bg-white' : 'bg-neutral-100'} hover:bg-neutral-200 transition-colors`}>
-                    <td className="py-4 px-4 align-top border-r border-black">
-                      <div className="font-bold text-black">{u.displayName || 'Unknown'}</div>
+                  <React.Fragment key={u.uid}>
+                  <tr className={`border-b border-black ${i % 2 === 0 ? 'bg-white' : 'bg-neutral-100'} hover:bg-neutral-200 transition-colors`}>
+                    <td 
+                      className="py-4 px-4 align-top border-r border-black cursor-pointer hover:bg-neutral-200 group"
+                      onClick={() => setExpandedUser(expandedUser === u.uid ? null : u.uid)}
+                    >
+                      <div className="font-bold text-black group-hover:underline">{u.displayName || 'Unknown'}</div>
                       <div className="text-sm font-medium text-neutral-600">{u.email}</div>
                       <div className="text-[10px] text-neutral-400 font-mono mt-1">ID: {u.uid}</div>
+                      <div className="text-[10px] text-blue-600 mt-2 font-bold uppercase flex items-center gap-1">
+                        {expandedUser === u.uid ? <ChevronDown size={12} /> : <ChevronRight size={12} />} View Purchases
+                      </div>
                     </td>
                     <td className="py-4 px-4 align-top border-r border-black">
                       <div className="flex flex-col gap-1 text-sm font-medium text-black">
@@ -240,6 +248,31 @@ export function AdminView() {
                       </div>
                     </td>
                   </tr>
+                  {expandedUser === u.uid && (
+                    <tr className="bg-neutral-50 border-b-2 border-black">
+                      <td colSpan={4} className="p-4 border-l-4 border-l-blue-500">
+                        <div className="font-bold uppercase text-xs tracking-widest text-neutral-500 mb-2 flex items-center gap-2">
+                          <Activity size={14} /> Purchase History
+                        </div>
+                        {(!u.purchases || u.purchases.length === 0) ? (
+                          <div className="text-sm text-neutral-600 italic bg-white p-3 border border-neutral-200 rounded-sm">No purchases found for this user.</div>
+                        ) : (
+                          <ul className="space-y-2">
+                            {u.purchases.map((p, idx) => (
+                              <li key={idx} className="bg-white border-2 border-black p-3 text-sm flex items-center justify-between shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                <div>
+                                  <span className="font-bold text-black uppercase">{p.itemName || 'Unknown Item'}</span>
+                                  <div className="text-xs text-neutral-500 font-mono mt-1">TX ID: {p.txId || 'N/A'}</div>
+                                </div>
+                                <div className="text-xs font-bold text-neutral-600 bg-neutral-100 px-2 py-1 border border-black">{formatDate(p.date)}</div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
