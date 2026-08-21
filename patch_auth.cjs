@@ -1,33 +1,21 @@
 const fs = require('fs');
-let code = fs.readFileSync('src/App.tsx', 'utf8');
+let code = fs.readFileSync('server.ts', 'utf8');
 
-const oldAuth = `const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {`;
+const oldLogic = `      const securityKey = process.env.WARRIORPLUS_SECURITY_KEY;
+      
+      // Verify Security Key
+      if (securityKey && data.WP_SECURITYKEY !== securityKey) {
+        console.error("Invalid Security Key");
+        return res.status(403).send("Invalid Security Key");
+      }`;
 
-const newAuth = `const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser && !currentUser.emailVerified) {
-        setUser(null);
-        return;
-      }
-      setUser(currentUser);
-      if (currentUser) {`;
+const newLogic = `      const securityKey = process.env.WARRIORPLUS_SECURITY_KEY || process.env.WARRIORPLUS_SECRET;
+      
+      // Verify Security Key
+      if (securityKey && data.WP_SECURITYKEY !== securityKey) {
+        console.error("Invalid Security Key. Expected:", securityKey, "Received:", data.WP_SECURITYKEY);
+        return res.status(403).send("Invalid Security Key");
+      }`;
 
-code = code.replace(oldAuth, newAuth);
-fs.writeFileSync('src/App.tsx', code);
-
-let authCode = fs.readFileSync('src/components/AuthPage.tsx', 'utf8');
-
-const oldSignup = `await sendEmailVerification(userCredential.user);
-        
-        setSuccessMsg('Sign up successful! Please check your email to verify.');`;
-
-const newSignup = `await sendEmailVerification(userCredential.user);
-        
-        await auth.signOut();
-        
-        setSuccessMsg('Sign up successful! Please check your email to verify.');`;
-
-authCode = authCode.replace(oldSignup, newSignup);
-fs.writeFileSync('src/components/AuthPage.tsx', authCode);
-console.log("Patched");
+code = code.replace(oldLogic, newLogic);
+fs.writeFileSync('server.ts', code);

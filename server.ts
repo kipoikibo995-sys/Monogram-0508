@@ -83,11 +83,11 @@ async function startServer() {
         console.error("Failed to log IPN to db", e);
       }
       
-      const securityKey = process.env.WARRIORPLUS_SECURITY_KEY;
+      const securityKey = process.env.WARRIORPLUS_SECURITY_KEY || process.env.WARRIORPLUS_SECRET;
       
       // Verify Security Key
       if (securityKey && data.WP_SECURITYKEY !== securityKey) {
-        console.error("Invalid Security Key");
+        console.error("Invalid Security Key. Expected:", securityKey, "Received:", data.WP_SECURITYKEY);
         return res.status(403).send("Invalid Security Key");
       }
       
