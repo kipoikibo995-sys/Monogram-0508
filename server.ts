@@ -17,7 +17,7 @@ if (process.env.FIREBASE_PROJECT_ID && privateKey && privateKey.includes('BEGIN 
         projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
         // Replace literal \n with actual newlines
-        privateKey: privateKey.replace(/\\n/g, '\n'),
+        privateKey: privateKey.replace(/^"|"$/g, '').replace(/\\n/g, '\n'),
       }),
     });
     console.log("Firebase Admin initialized successfully.");
@@ -29,7 +29,18 @@ if (process.env.FIREBASE_PROJECT_ID && privateKey && privateKey.includes('BEGIN 
   // Initialize without credentials (might work if running in GCP context, but usually needs env vars)
 }
 
-const db = getApps().length ? getFirestore() : null;
+import fs from 'fs';
+
+const dbConfigPath = path.join(process.cwd(), 'firebase-applet-config.json');
+let databaseId = undefined;
+if (fs.existsSync(dbConfigPath)) {
+  try {
+    const cfg = JSON.parse(fs.readFileSync(dbConfigPath, 'utf8'));
+    databaseId = cfg.firestoreDatabaseId;
+  } catch (e) {}
+}
+
+const db = getApps().length ? getFirestore(databaseId) : null;
 
 async function startServer() {
   const app = express();
