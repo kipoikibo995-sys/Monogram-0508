@@ -67,6 +67,7 @@ app.post('/api/wplus/ipn', async (req, res) => {
     const action = data.WP_ACTION;
     const buyerEmail = data.WP_BUYER_EMAIL?.toLowerCase();
     const itemName = data.WP_ITEM_NAME;
+    const itemNumber = data.WP_ITEM_NUMBER; // Add item number for explicit checking
     
     if (!buyerEmail) {
       console.log("No buyer email provided in IPN data. This is expected during WarriorPlus testing.");
@@ -84,6 +85,7 @@ app.post('/api/wplus/ipn', async (req, res) => {
          email: buyerEmail,
          action: action,
          itemName: itemName,
+         itemNumber: itemNumber || '',
          date: Date.now(),
          txId: data.WP_TXNID || 'unknown'
        });
@@ -97,7 +99,14 @@ app.post('/api/wplus/ipn', async (req, res) => {
       // Update user tier and add purchase
       let newTier = 'regular';
       
-      // Map item names or numbers to specific tiers
+      // 1. Explicit Item Number Checking
+      if (itemNumber === 'wso_tbn52k') {
+        newTier = 'regular'; // FE Product
+      }
+      // Add future PRO item numbers here:
+      // else if (itemNumber === 'wso_xxxxxx') { newTier = 'pro'; }
+      
+      // 2. Fallback: Map item names to specific tiers if no exact itemNumber match
       const itemNameLower = itemName ? itemName.toLowerCase() : '';
       if (itemNameLower.includes('pro') || itemNameLower.includes('oto') || itemNameLower.includes('enterprise')) {
         newTier = 'pro';
@@ -188,9 +197,12 @@ app.post('/api/user/sync-upgrades', async (req, res) => {
       const data = doc.data();
       if (data.action === 'sale') {
          const itemNameLower = data.itemName ? data.itemName.toLowerCase() : '';
+         const itemNumber = data.itemNumber || '';
          let upgradeTo = 'regular';
          
-         if (itemNameLower.includes('pro') || itemNameLower.includes('oto') || itemNameLower.includes('enterprise')) {
+         if (itemNumber === 'wso_tbn52k') {
+           upgradeTo = 'regular'; // FE
+         } else if (itemNameLower.includes('pro') || itemNameLower.includes('oto') || itemNameLower.includes('enterprise')) {
            upgradeTo = 'pro';
          }
          
