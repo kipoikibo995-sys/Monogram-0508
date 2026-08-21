@@ -32,15 +32,16 @@ if (process.env.FIREBASE_PROJECT_ID && privateKey && privateKey.includes('BEGIN 
 import fs from 'fs';
 
 const dbConfigPath = path.join(process.cwd(), 'firebase-applet-config.json');
+let fallbackDbId = "ai-studio-remixremixmonogr-ef7cfc64-7239-42ec-967d-7eaddd196266";
 let databaseId = undefined;
 if (fs.existsSync(dbConfigPath)) {
   try {
     const cfg = JSON.parse(fs.readFileSync(dbConfigPath, 'utf8'));
-    databaseId = cfg.firestoreDatabaseId;
+    databaseId = cfg.firestoreDatabaseId || cfg.databaseId || fallbackDbId;
   } catch (e) {}
 }
 
-const db = getApps().length ? getFirestore(databaseId) : null;
+const db = getApps().length ? getFirestore(databaseId || fallbackDbId) : null;
 
 async function startServer() {
   const app = express();
@@ -73,13 +74,11 @@ async function startServer() {
       
       // Verify Security Key
       if (securityKey && data.WP_SECURITYKEY !== securityKey) {
-        fs.appendFileSync('ipn_debug.log', '-> Failed: Invalid Security Key\n');
         console.error("Invalid Security Key");
         return res.status(403).send("Invalid Security Key");
       }
       
       if (!db) {
-        fs.appendFileSync('ipn_debug.log', '-> Failed: Firestore not initialized (db is null)\n');
         console.error("Firestore not initialized.");
         return res.status(500).send("Server Database Error");
       }
@@ -154,10 +153,8 @@ async function startServer() {
       }
       
       // Always return 200 to acknowledge receipt to WarriorPlus
-      fs.appendFileSync('ipn_debug.log', '-> Success: IPN Processed\n');
       res.status(200).send("IPN Processed");
     } catch (error) {
-      fs.appendFileSync('ipn_debug.log', `-> Error: ${error.message}\n${error.stack}\n`);
       console.error("Error processing IPN:", error);
       res.status(500).send("Internal Server Error");
     }
