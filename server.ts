@@ -42,6 +42,11 @@ if (fs.existsSync(dbConfigPath)) {
 }
 
 const db = getApps().length ? getFirestore(databaseId || fallbackDbId) : null;
+if (db) {
+  try {
+    db.settings({ preferRest: true, ignoreUndefinedProperties: true });
+  } catch(e){}
+}
 
 async function startServer() {
   const app = express();
@@ -58,6 +63,14 @@ async function startServer() {
     try {
       const data = req.body;
       console.log("Received WarriorPlus IPN:", data);
+      
+      // Handle empty ping or test
+      if (Object.keys(data).length === 0 || !data.WP_ACTION) {
+         return res.status(200).send("Ping OK");
+      }
+      if (data.WP_ACTION === 'test') {
+         return res.status(200).send("Test OK");
+      }
       try {
         if (db) {
           await db.collection('ipn_logs').add({
@@ -92,6 +105,21 @@ async function startServer() {
       if (!buyerEmail) {
         console.log("No buyer email provided in IPN data. This is expected during WarriorPlus testing.");
         return res.status(200).send("IPN Processed (Test/Empty)");
+      }
+      
+      const txnId = data.WP_TXNID;
+      if (txnId) {
+        try {
+           const txRef = db.collection('processed_ipns').doc(txnId);
+           const txDoc = await txRef.get();
+           if (txDoc.exists) {
+               console.log("Duplicate IPN - Đã xử lý trước đó:", txnId);
+               return res.status(200).send("Duplicate IPN");
+           }
+           await txRef.set({ email: buyerEmail, itemNumber, date: Date.now() });
+        } catch(e) {
+           console.error("Error checking idempotency", e);
+        }
       }
       
       // Look up user by email
