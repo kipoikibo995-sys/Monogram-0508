@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Shield, ShieldAlert, ArrowUpCircle, Ban, Search, CheckCircle, Clock, Users, UserCheck, Activity, ChevronDown, ChevronRight } from 'lucide-react';
+import { Shield, ShieldAlert, ArrowUpCircle, Ban, Search, CheckCircle, Clock, Users, UserCheck, Activity, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 
 interface PendingUpgrade {
   id: string;
@@ -67,6 +67,27 @@ export function AdminView() {
     } catch (e) {
       console.error(e);
       alert('Failed to update tier');
+    }
+  };
+
+  const handleDeleteUser = async (uid: string, email: string) => {
+    if (!window.confirm(`WARNING: Are you sure you want to permanently delete user ${email} and ALL their projects? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      // Delete user document
+      await deleteDoc(doc(db, 'users', uid));
+      
+      // Delete user's projects
+      const q = query(collection(db, 'projects'), where('userId', '==', uid));
+      const snap = await getDocs(q);
+      const deletePromises = snap.docs.map(d => deleteDoc(d.ref));
+      await Promise.all(deletePromises);
+
+      setUsers(prev => prev.filter(u => u.uid !== uid));
+    } catch (e) {
+      console.error(e);
+      alert('Failed to delete user');
     }
   };
 
@@ -232,19 +253,26 @@ export function AdminView() {
                         
                         {u.status === 'banned' ? (
                           <button 
-                            onClick={() => handleUpdateStatus(u.uid, 'active')}
+                            onClick={(e) => { e.stopPropagation(); handleUpdateStatus(u.uid, 'active'); }}
                             className="flex items-center justify-center gap-1.5 px-3 py-1 border-2 border-black bg-white text-black hover:bg-black hover:text-white transition-colors text-xs font-bold uppercase w-full"
                           >
                             <CheckCircle size={14}/> Unban
                           </button>
                         ) : (
                           <button 
-                            onClick={() => handleUpdateStatus(u.uid, 'banned')}
+                            onClick={(e) => { e.stopPropagation(); handleUpdateStatus(u.uid, 'banned'); }}
                             className="flex items-center justify-center gap-1.5 px-3 py-1 border-2 border-black bg-black text-white hover:bg-neutral-800 transition-colors text-xs font-bold uppercase w-full"
                           >
                             <Ban size={14}/> Ban
                           </button>
                         )}
+                        
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDeleteUser(u.uid, u.email); }}
+                          className="flex items-center justify-center gap-1.5 px-3 py-1 border-2 border-red-500 text-red-600 bg-white hover:bg-red-500 hover:text-white transition-colors text-xs font-bold uppercase w-full mt-2"
+                        >
+                          <Trash2 size={14}/> Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
