@@ -94,32 +94,33 @@ async function startServer() {
       const userId = userDoc.id;
       
       if (action === 'sale') {
-        // Update user tier and add purchase
-        let newTier = 'regular';
+        let newTier = userData.tier || 'free';
         
         // 1. Explicit Item Number Checking
         if (itemNumber === 'wso_tbn52k') {
-          newTier = 'regular'; // FE Product
+          if (newTier === 'free') newTier = 'regular'; // FE Product
+        } else if (itemNumber === 'wso_xj9kp4' || itemNumber === 'wso_fk8qy9') {
+          newTier = 'pro'; // PRO Editions
+        } else {
+          // 2. Fallback: Map item names to specific tiers if no exact itemNumber match
+          const itemNameLower = itemName ? itemName.toLowerCase() : '';
+          if (itemNameLower.includes('pro') || itemNameLower.includes('oto') || itemNameLower.includes('enterprise')) {
+            newTier = 'pro';
+          }
         }
-        // Add future PRO item numbers here:
-        // else if (itemNumber === 'wso_xxxxxx') { newTier = 'pro'; }
-        
-        // 2. Fallback: Map item names to specific tiers if no exact itemNumber match
-        const itemNameLower = itemName ? itemName.toLowerCase() : '';
-        if (itemNameLower.includes('pro') || itemNameLower.includes('oto') || itemNameLower.includes('enterprise')) {
-          newTier = 'pro';
-        }
-        
+
         await userDoc.ref.update({
           tier: newTier,
           purchases: FieldValue.arrayUnion({
-            item: itemName,
+            itemName: itemName || 'Unknown Item',
+            itemNumber: itemNumber || '',
             date: Date.now(),
             txId: data.WP_TXNID || 'unknown'
-          })
+          }),
+          purchased_items: FieldValue.arrayUnion(itemNumber || '')
         });
-        
-        console.log(`Successfully upgraded user ${userId} to ${newTier}`);
+
+        console.log(`Successfully upgraded user ${userId} to ${newTier} for item ${itemNumber}`);
       } else if (action === 'refund') {
         // Handle refunds - downgrade tier
         await userDoc.ref.update({
@@ -188,30 +189,37 @@ async function startServer() {
       const userDoc = userSnap.docs[0];
       let currentTier = userDoc.data().tier || 'free';
       const purchases = userDoc.data().purchases || [];
+      const purchasedItems = userDoc.data().purchased_items || [];
       
       let newTier = currentTier;
       
       for (const doc of snapshot.docs) {
         const data = doc.data();
         if (data.action === 'sale') {
-           const itemNameLower = data.itemName ? data.itemName.toLowerCase() : '';
            const itemNumber = data.itemNumber || '';
-           let upgradeTo = 'regular';
            
            if (itemNumber === 'wso_tbn52k') {
-             upgradeTo = 'regular'; // FE
-           } else if (itemNameLower.includes('pro') || itemNameLower.includes('oto') || itemNameLower.includes('enterprise')) {
-             upgradeTo = 'pro';
+             if (newTier === 'free') newTier = 'regular'; // FE
+           } else if (itemNumber === 'wso_xj9kp4' || itemNumber === 'wso_fk8qy9') {
+             newTier = 'pro'; // PRO
+           } else {
+             // Fallback
+             const itemNameLower = data.itemName ? data.itemName.toLowerCase() : '';
+             if (itemNameLower.includes('pro') || itemNameLower.includes('oto') || itemNameLower.includes('enterprise')) {
+               newTier = 'pro';
+             }
            }
            
-           if (upgradeTo === 'pro') newTier = 'pro';
-           else if (upgradeTo === 'regular' && newTier === 'free') newTier = 'regular';
-           
            purchases.push({
-             item: data.itemName,
+             itemName: data.itemName || 'Unknown Item',
+             itemNumber: itemNumber,
              date: data.date,
-             txId: data.txId
+             txId: data.txId || 'unknown'
            });
+
+           if (itemNumber && !purchasedItems.includes(itemNumber)) {
+             purchasedItems.push(itemNumber);
+           }
         } else if (data.action === 'refund') {
            newTier = 'free';
         }
@@ -220,7 +228,8 @@ async function startServer() {
       
       await userDoc.ref.update({
          tier: newTier,
-         purchases: purchases
+         purchases: purchases,
+         purchased_items: purchasedItems
       });
       
       res.status(200).json({ status: 'upgraded', tier: newTier });
