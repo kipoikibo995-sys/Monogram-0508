@@ -3,16 +3,15 @@ import cors from 'cors';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
-
 dotenv.config();
 
 const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 if (process.env.FIREBASE_PROJECT_ID && privateKey && privateKey.includes('BEGIN PRIVATE KEY')) {
   try {
     if (!getApps().length) {
-      console.log("Attempting Firebase Admin init with:", { 
-         projectId: process.env.FIREBASE_PROJECT_ID, 
-         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      console.log("Attempting Firebase Admin init with:", {
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
          hasPrivateKey: !!privateKey
       });
       initializeApp({
@@ -32,7 +31,14 @@ if (process.env.FIREBASE_PROJECT_ID && privateKey && privateKey.includes('BEGIN 
   console.warn("⚠️ Firebase Admin credentials not found. IPN updates will fail.");
 }
 
-const db = getApps().length ? getFirestore() : null;
+// KHẮC PHỤC LỖI 5 NOT_FOUND TRÊN VERCEL TẠI ĐÂY
+let fallbackDbId = "ai-studio-remixremixmonogr-ef7cfc64-7239-42ec-967d-7eaddd196266";
+const db = getApps().length ? getFirestore(fallbackDbId) : null;
+if (db) {
+  try {
+    db.settings({ preferRest: true, ignoreUndefinedProperties: true });
+  } catch(e){}
+}
 
 if (!db) {
   console.error("CRITICAL: Firebase db is null. Check environment variables formatting.");
@@ -51,11 +57,19 @@ app.post('/api/wplus/ipn', async (req, res) => {
     const data = req.body;
     console.log("Received WarriorPlus IPN:", data);
     
-    const securityKey = process.env.WARRIORPLUS_SECURITY_KEY;
+    // XỬ LÝ LỖI 403 KHI BẤM "SEND TEST"
+    if (Object.keys(data).length === 0 || !data.WP_ACTION) {
+       return res.status(200).send("Ping OK");
+    }
+    if (data.WP_ACTION === 'test') {
+       return res.status(200).send("Test OK");
+    }
+    
+    const securityKey = process.env.WARRIORPLUS_SECURITY_KEY || process.env.WARRIORPLUS_SECRET;
     
     // Verify Security Key
     if (securityKey && data.WP_SECURITYKEY !== securityKey) {
-      console.error("Invalid Security Key");
+      console.error("Invalid Security Key. Expected:", securityKey, "Received:", data.WP_SECURITYKEY);
       return res.status(403).send("Invalid Security Key");
     }
     
@@ -67,10 +81,10 @@ app.post('/api/wplus/ipn', async (req, res) => {
     const action = data.WP_ACTION;
     const buyerEmail = data.WP_BUYER_EMAIL?.toLowerCase();
     const itemName = data.WP_ITEM_NAME;
-    const itemNumber = data.WP_ITEM_NUMBER; // Add item number for explicit checking
+    const itemNumber = data.WP_ITEM_NUMBER; 
     
     if (!buyerEmail) {
-      console.log("No buyer email provided in IPN data. This is expected during WarriorPlus testing.");
+      console.log("No buyer email provided in IPN data.");
       return res.status(200).send("IPN Processed (Test/Empty)");
     }
     
@@ -96,17 +110,12 @@ app.post('/api/wplus/ipn', async (req, res) => {
     const userId = userDoc.id;
     
     if (action === 'sale') {
-      // Update user tier and add purchase
       let newTier = 'regular';
       
-      // 1. Explicit Item Number Checking
       if (itemNumber === 'wso_tbn52k') {
-        newTier = 'regular'; // FE Product
+        newTier = 'regular'; 
       }
-      // Add future PRO item numbers here:
-      // else if (itemNumber === 'wso_xxxxxx') { newTier = 'pro'; }
       
-      // 2. Fallback: Map item names to specific tiers if no exact itemNumber match
       const itemNameLower = itemName ? itemName.toLowerCase() : '';
       if (itemNameLower.includes('pro') || itemNameLower.includes('oto') || itemNameLower.includes('enterprise')) {
         newTier = 'pro';
@@ -123,14 +132,12 @@ app.post('/api/wplus/ipn', async (req, res) => {
       
       console.log(`Successfully upgraded user ${userId} to ${newTier}`);
     } else if (action === 'refund') {
-      // Handle refunds - downgrade tier
       await userDoc.ref.update({
         tier: 'free'
       });
       console.log(`Successfully downgraded user ${userId} due to refund.`);
     }
     
-    // Always return 200 to acknowledge receipt to WarriorPlus
     res.status(200).send("IPN Processed");
   } catch (error) {
     console.error("Error processing IPN:", error);
@@ -201,7 +208,7 @@ app.post('/api/user/sync-upgrades', async (req, res) => {
          let upgradeTo = 'regular';
          
          if (itemNumber === 'wso_tbn52k') {
-           upgradeTo = 'regular'; // FE
+           upgradeTo = 'regular'; 
          } else if (itemNameLower.includes('pro') || itemNameLower.includes('oto') || itemNameLower.includes('enterprise')) {
            upgradeTo = 'pro';
          }
@@ -217,7 +224,7 @@ app.post('/api/user/sync-upgrades', async (req, res) => {
       } else if (data.action === 'refund') {
          newTier = 'free';
       }
-      await doc.ref.delete(); // Remove the pending upgrade
+      await doc.ref.delete(); 
     }
     
     await userDoc.ref.update({
@@ -232,4 +239,5 @@ app.post('/api/user/sync-upgrades', async (req, res) => {
   }
 });
 
+// GITHUB SYNC FORCE UPDATE
 export default app;

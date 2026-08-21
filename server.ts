@@ -1,3 +1,4 @@
+process.env.FIRESTORE_PREFER_REST="true";
 import express from 'express';
 import path from 'path';
 import cors from 'cors';
