@@ -56,17 +56,22 @@ async function startServer() {
   app.post('/api/wplus/ipn', async (req, res) => {
     try {
       const data = req.body;
+      const logEntry = `\n[${new Date().toISOString()}] IPN Received:\nHeaders: ${JSON.stringify(req.headers)}\nBody: ${JSON.stringify(data)}\n`;
+      fs.appendFileSync('ipn_debug.log', logEntry);
+      
       console.log("Received WarriorPlus IPN:", data);
       
       const securityKey = process.env.WARRIORPLUS_SECURITY_KEY;
       
       // Verify Security Key
       if (securityKey && data.WP_SECURITYKEY !== securityKey) {
+        fs.appendFileSync('ipn_debug.log', '-> Failed: Invalid Security Key\n');
         console.error("Invalid Security Key");
         return res.status(403).send("Invalid Security Key");
       }
       
       if (!db) {
+        fs.appendFileSync('ipn_debug.log', '-> Failed: Firestore not initialized (db is null)\n');
         console.error("Firestore not initialized.");
         return res.status(500).send("Server Database Error");
       }
@@ -141,8 +146,10 @@ async function startServer() {
       }
       
       // Always return 200 to acknowledge receipt to WarriorPlus
+      fs.appendFileSync('ipn_debug.log', '-> Success: IPN Processed\n');
       res.status(200).send("IPN Processed");
     } catch (error) {
+      fs.appendFileSync('ipn_debug.log', `-> Error: ${error.message}\n${error.stack}\n`);
       console.error("Error processing IPN:", error);
       res.status(500).send("Internal Server Error");
     }
