@@ -628,7 +628,7 @@ export default function App() {
 
   const createNewProject = async () => {
     if (userTier === 'free' && projects.length >= 5) {
-      alert("Free tier is limited to 5 projects. Please upgrade to Pro to create more.");
+      if (window.confirm("Free tier is limited to 5 projects. Would you like to upgrade to Pro to create more?")) { window.open("https://kojilaunch.com/monogram-version/", "_blank"); }
       return;
     }
     try {
@@ -1366,7 +1366,7 @@ export default function App() {
     const maxPages = userTier === 'free' ? 20 : 100;
     
     if (images.length + allowedFiles.length > maxPages) {
-      alert(`Your tier (${userTier}) is limited to ${maxPages} pages per book. Please upgrade to add more.`);
+      if (window.confirm(`Your tier (${userTier}) is limited to ${maxPages} pages per book. Would you like to upgrade to add more?`)) { window.open("https://kojilaunch.com/monogram-version/", "_blank"); }
       allowedFiles = allowedFiles.slice(0, maxPages - images.length);
       if (allowedFiles.length === 0) return;
     }
@@ -1719,7 +1719,7 @@ export default function App() {
                     <>
                       <button onClick={() => { 
                         setIsExportMenuOpen(false); 
-                        if (userTier !== 'pro') { alert("Export SVG (Full photo) is a Pro feature. Please upgrade."); return; }
+                        if (userTier !== 'pro') { if (window.confirm("Export SVG (Full photo) is a Pro feature. Would you like to upgrade now?")) { window.open("https://kojilaunch.com/monogram-version/", "_blank"); } return; }
                         handleBulkExportSVG(); 
                       }} className="w-full text-left px-4 py-2 text-sm flex items-center justify-between transition-colors border-t border-neutral-100 mt-1 hover:bg-neutral-50 hover:text-neutral-900 text-neutral-700">
                         <div className="flex items-center gap-2"><Download size={14} /> Export SVG (Full photo)</div>
@@ -1727,7 +1727,7 @@ export default function App() {
                       </button>
                       <button onClick={() => { 
                         setIsExportMenuOpen(false); 
-                        if (userTier !== 'pro') { alert("Export PNG (Full photo) is a Pro feature. Please upgrade."); return; }
+                        if (userTier !== 'pro') { if (window.confirm("Export PNG (Full photo) is a Pro feature. Would you like to upgrade now?")) { window.open("https://kojilaunch.com/monogram-version/", "_blank"); } return; }
                         handleBulkExportPNG(); 
                       }} className="w-full text-left px-4 py-2 text-sm flex items-center justify-between transition-colors mt-1 hover:bg-neutral-50 hover:text-neutral-900 text-neutral-700">
                         <div className="flex items-center gap-2"><Download size={14} /> Export PNG (Full photo)</div>
@@ -1883,7 +1883,7 @@ export default function App() {
                           key={shape}
                           onClick={() => {
                             if (isLockedShape) {
-                              alert(`The ${shape} pixel shape is only available in the Pro version. Please upgrade.`);
+                              if (window.confirm(`The ${shape} pixel shape is only available in the Pro version. Would you like to upgrade now?`)) { window.open("https://kojilaunch.com/monogram-version/", "_blank"); }
                               return;
                             }
                             setPixelShape(shape as any);
@@ -2085,7 +2085,7 @@ export default function App() {
                 
                 {userTier !== 'pro' && (
                   <button 
-                    onClick={() => window.open('https://warriorplus.com', '_blank')}
+                    onClick={() => window.open('https://kojilaunch.com/monogram-version/', '_blank')}
                     className="w-full mt-1 flex items-center justify-center gap-2 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg hover:from-amber-600 hover:to-orange-600 shadow-sm transition-all"
                   >
                     <ArrowUpCircle size={14} /> Upgrade Now
@@ -2184,7 +2184,7 @@ export default function App() {
                           Refresh Status
                         </button>
                         <a 
-                          href="https://warriorplus.com"
+                          href="https://kojilaunch.com/monogram-version/"
                           target="_blank"
                           rel="noreferrer"
                           className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-neutral-200 hover:border-neutral-900 text-neutral-900 rounded-lg text-sm font-bold transition-colors"
