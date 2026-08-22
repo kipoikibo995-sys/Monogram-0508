@@ -262,7 +262,8 @@ export const PdfDocument = ({ project, processedImages, isExportingSolutions, us
             </View>
           </Page>
 
-                    <Page size={PAGE_SIZE as any} style={{ ...styles.centerPage, padding: 50 * sf, paddingHorizontal: pagePadding * sf }}>
+                    {userTier === 'pro' && (
+          <Page size={PAGE_SIZE as any} style={{ ...styles.centerPage, padding: 50 * sf, paddingHorizontal: pagePadding * sf }}>
             <Text style={{ fontSize: 48 * sf, fontFamily: 'Helvetica-BoldOblique', textAlign: 'center', marginBottom: 60 * sf }}>{mystery.title}</Text>
             
             <View style={{ width: '80%', alignSelf: 'center' }}>
@@ -300,8 +301,10 @@ export const PdfDocument = ({ project, processedImages, isExportingSolutions, us
               ))}
             </View>
           </Page>
+          )}
 
-                    <Page size={PAGE_SIZE as any} style={{...styles.paddedPage, paddingHorizontal: pagePadding * sf}}>
+          {userTier === 'pro' && (
+          <Page size={PAGE_SIZE as any} style={{...styles.paddedPage, paddingHorizontal: pagePadding * sf}}>
             <Text style={{ fontSize: 24 * sf, fontFamily: 'Helvetica-Bold', textAlign: 'center', marginBottom: 15 * sf, textTransform: 'uppercase' }}>{warmup.title}</Text>
             <Text style={{ fontSize: 16 * sf, fontFamily: 'Helvetica', textAlign: 'center', marginBottom: 30 * sf, lineHeight: 1.5 }}>{warmup.subtitle}</Text>
             
@@ -323,8 +326,10 @@ export const PdfDocument = ({ project, processedImages, isExportingSolutions, us
               ))}
             </View>
           </Page>
+          )}
 
-                    <Page size={PAGE_SIZE as any} style={{...styles.paddedPage, paddingHorizontal: pagePadding * sf}}>
+          {userTier === 'pro' && (
+          <Page size={PAGE_SIZE as any} style={{...styles.paddedPage, paddingHorizontal: pagePadding * sf}}>
             <Text style={{ fontSize: 28 * sf, fontFamily: 'Helvetica-Bold', textAlign: 'center', marginBottom: 15 * sf, textTransform: 'uppercase' }}>{pentesting.title}</Text>
             <Text style={{ fontSize: 16 * sf, fontFamily: 'Helvetica', textAlign: 'center', marginBottom: 32 * sf, lineHeight: 1.5 }}>{pentesting.subtitle}</Text>
             
@@ -358,6 +363,7 @@ export const PdfDocument = ({ project, processedImages, isExportingSolutions, us
               ))}
             </View>
           </Page>
+          )}
         </>
       )}
 

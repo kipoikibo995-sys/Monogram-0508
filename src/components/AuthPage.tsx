@@ -39,8 +39,20 @@ export function AuthPage() {
         return 'Password is too weak. Please use at least 6 characters.';
       case 'auth/too-many-requests':
         return 'Too many failed attempts. Please try again later.';
+      case 'auth/popup-closed-by-user':
+        return 'Sign in was cancelled. You closed the login window before finishing.';
+      case 'auth/network-request-failed':
+        return 'Network connection error. Please check your internet and try again.';
       default:
-        return err.message || 'An error occurred. Please try again later.';
+        let msg = err.message || 'An error occurred. Please try again later.';
+        if (msg.includes('popup-closed-by-user')) {
+          return 'Sign in was cancelled. You closed the login window before finishing.';
+        }
+        // Make the error message cleaner if it comes directly from Firebase
+        if (msg.startsWith('Firebase:')) {
+          msg = msg.replace(/^Firebase:\s*/, '').replace(/\s*\(auth\/.*\)\./, '.');
+        }
+        return msg;
     }
   };
 

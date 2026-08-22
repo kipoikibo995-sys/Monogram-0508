@@ -137,7 +137,7 @@ export const BookFlow: React.FC<BookFlowProps> = ({ project, onUpdateProject, ac
               <h3 className="text-xl font-bold text-neutral-900 mb-2">Pro Feature</h3>
               <p className="text-neutral-600 mb-6 font-medium">This page is only available in the Pro version. Upgrade to edit and export this template.</p>
               <button 
-                onClick={() => window.open('https://kojilaunch.com/monogram-version/', '_blank')}
+                onClick={() => window.open((userTier === 'free' ? 'https://kojilaunch.com/fe-monogram/' : 'https://kojilaunch.com/monogram-version/'), '_blank')}
                 className="bg-neutral-900 text-white px-6 py-3 rounded-lg font-bold hover:bg-neutral-800 transition-colors w-full"
               >
                 Upgrade to Pro
