@@ -63,6 +63,9 @@ async function startServer() {
   app.post('/api/wplus/ipn', async (req, res) => {
     try {
       const data = req.body;
+      // DEBUG: log every IPN received
+      if (db) { await db.collection('debug_ipns').add({ date: Date.now(), data: req.body }); }
+
       console.log("Received WarriorPlus IPN:", data);
       
       // Handle empty ping or test

@@ -289,7 +289,7 @@ export function AdminView() {
                             {u.purchases.map((p, idx) => (
                               <li key={idx} className="bg-white border-2 border-black p-3 text-sm flex items-center justify-between shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                                 <div>
-                                  <span className="font-bold text-black uppercase">{p.itemName || 'Unknown Item'}</span>
+                                  <span className="font-bold text-black uppercase">{p.itemName || p.item || "Unknown Item"}</span>
                                   <div className="text-xs text-neutral-500 font-mono mt-1">TX ID: {p.txId || 'N/A'}</div>
                                 </div>
                                 <div className="text-xs font-bold text-neutral-600 bg-neutral-100 px-2 py-1 border border-black">{formatDate(p.date)}</div>
