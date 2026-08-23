@@ -52,11 +52,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // IPN Endpoint
-app.post('/api/wplus/ipn', async (req, res) => {
+
+app.post('/api/wplus/ipn', express.urlencoded({ extended: true, type: '*/*' }), async (req, res) => {
+
     try {
       const data = req.body;
       // DEBUG: log every IPN received
-      if (db) { await db.collection('debug_ipns').add({ date: Date.now(), data: req.body }); }
+      if (db) { await db.collection('debug_ipns').add({ date: Date.now(), data: req.body, headers: req.headers, rawData: typeof req.body }); }
 
       console.log("Received WarriorPlus IPN:", data);
       
@@ -289,3 +291,9 @@ app.post('/api/wplus/ipn', async (req, res) => {
   // Vite middleware for development
   
 export default app;
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};

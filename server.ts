@@ -56,11 +56,13 @@ async function startServer() {
   app.use(cors());
   
   // Use express.urlencoded for IPN (WarriorPlus sends form data)
-  app.use(express.urlencoded({ extended: true }));
+  
   app.use(express.json());
 
   // IPN Endpoint
-  app.post('/api/wplus/ipn', async (req, res) => {
+  
+  app.post('/api/wplus/ipn', express.urlencoded({ extended: true, type: '*/*' }), async (req, res) => {
+
     try {
       const data = req.body;
       // DEBUG: log every IPN received
