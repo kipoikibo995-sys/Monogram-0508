@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import multer from 'multer';
+const upload = multer();
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
@@ -53,7 +55,9 @@ app.use(express.json());
 
 // IPN Endpoint
 
-app.post('/api/wplus/ipn', express.urlencoded({ extended: true, type: '*/*' }), async (req, res) => {
+
+  app.post('/api/wplus/ipn', upload.none(), express.urlencoded({ extended: true }), async (req, res) => {
+
 
     try {
       const data = req.body;
