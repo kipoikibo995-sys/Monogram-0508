@@ -1549,10 +1549,26 @@ export default function App() {
     
     try {
       const processedImages = [];
+      const exportScale = 3; // High resolution for print
+      
       for (let i = 0; i < images.length; i++) {
         setExportProgress(Math.round(((i) / images.length) * 50));
         await new Promise(r => setTimeout(r, 10)); // Yield
-        processedImages.push(processImageForPdf(images[i].img, images[i].settings));
+        
+        const processed = processImageForPdf(images[i].img, images[i].settings);
+        
+        // Generate high-res raster image for PDF to prevent browser freezing
+        const tmpCanvas = document.createElement('canvas');
+        
+        // Generate Workbook image
+        renderArt(tmpCanvas, images[i].img, { ...images[i].settings, viewMode: 'workbook' }, exportScale);
+        processed.workbookDataUrl = tmpCanvas.toDataURL('image/png');
+        
+        // Generate Solution image
+        renderArt(tmpCanvas, images[i].img, { ...images[i].settings, viewMode: 'solution' }, exportScale);
+        processed.solutionDataUrl = tmpCanvas.toDataURL('image/jpeg', 0.9);
+        
+        processedImages.push(processed);
       }
       
       setExportStatus('Generating PDF layout (this may take a minute)...');

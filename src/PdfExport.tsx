@@ -24,6 +24,8 @@ export type ProcessedImage = {
   gridRows: number;
   cells: { x: number; y: number; shapeIndex: number; code: string }[];
   settings: ImageSettings;
+  workbookDataUrl?: string;
+  solutionDataUrl?: string;
 };
 
 interface PdfExportProps {
@@ -393,6 +395,9 @@ export const PdfDocument = ({ project, processedImages, isExportingSolutions, us
         return (
           <Page key={i} size={[pageW, pageH]} style={{ backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <View style={{ width: finalW, height: finalH }}>
+              {(isExportingSolutions ? img.solutionDataUrl : img.workbookDataUrl) ? (
+                <PdfImage src={(isExportingSolutions ? img.solutionDataUrl : img.workbookDataUrl)!} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              ) : (
               <Svg width={finalW} height={finalH} viewBox={`0 0 ${contentW} ${contentH}`}>
                 {settings.showCoordinates && (
                   <G>
@@ -469,6 +474,7 @@ export const PdfDocument = ({ project, processedImages, isExportingSolutions, us
                   })}
                 </G>
               </Svg>
+              )}
             </View>
           </Page>
         );
@@ -501,6 +507,9 @@ export const PdfDocument = ({ project, processedImages, isExportingSolutions, us
         return (
           <Page key={i} size={[pageW, pageH]} style={{ backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <View style={{ width: finalW, height: finalH }}>
+              {img.solutionDataUrl ? (
+                <PdfImage src={img.solutionDataUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              ) : (
               <Svg width={finalW} height={finalH} viewBox={`0 0 ${contentW} ${contentH}`}>
                 {settings.showCoordinates && (
                   <G>
@@ -577,6 +586,7 @@ export const PdfDocument = ({ project, processedImages, isExportingSolutions, us
                   })}
                 </G>
               </Svg>
+              )}
             </View>
           </Page>
         );
