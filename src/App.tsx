@@ -1549,7 +1549,6 @@ export default function App() {
     
     try {
       const processedImages = [];
-      const exportScale = 3; // High resolution for print
       
       for (let i = 0; i < images.length; i++) {
         setExportProgress(Math.round(((i) / images.length) * 50));
@@ -1557,16 +1556,20 @@ export default function App() {
         
         const processed = processImageForPdf(images[i].img, images[i].settings);
         
+        // Dynamically calculate scale: target ~24px per cell for optimal PDF rendering size
+        const currentCellSize = images[i].settings.cellSize || 12;
+        const dynamicScale = Math.max(0.5, Math.min(3, 24 / currentCellSize));
+        
         // Generate high-res raster image for PDF to prevent browser freezing
         const tmpCanvas = document.createElement('canvas');
         
-        // Generate Workbook image
-        renderArt(tmpCanvas, images[i].img, { ...images[i].settings, viewMode: 'workbook' }, exportScale);
-        processed.workbookDataUrl = tmpCanvas.toDataURL('image/png');
+        // Generate Workbook image (Using JPEG with 0.7 quality to save massive amount of space)
+        renderArt(tmpCanvas, images[i].img, { ...images[i].settings, viewMode: 'workbook' }, dynamicScale);
+        processed.workbookDataUrl = tmpCanvas.toDataURL('image/jpeg', 0.7);
         
         // Generate Solution image
-        renderArt(tmpCanvas, images[i].img, { ...images[i].settings, viewMode: 'solution' }, exportScale);
-        processed.solutionDataUrl = tmpCanvas.toDataURL('image/jpeg', 0.9);
+        renderArt(tmpCanvas, images[i].img, { ...images[i].settings, viewMode: 'solution' }, dynamicScale);
+        processed.solutionDataUrl = tmpCanvas.toDataURL('image/jpeg', 0.7);
         
         processedImages.push(processed);
       }
