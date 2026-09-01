@@ -307,7 +307,7 @@ const drawCell = (
         ctx.font = `bold ${size * 0.55}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const displayChar = shape.index === 0 ? '0' : (densityCodes[shape.index - 1] || shape.code);
+        const displayChar = shape.index === 0 ? '0' : (mysteryMode ? shape.index.toString() : (densityCodes[shape.index - 1] || shape.code));
         ctx.fillText(displayChar, textX, textY);
       }
     }
@@ -475,8 +475,8 @@ const generateSVG = (img: HTMLImageElement, settings: ImageSettings): string => 
       if (viewMode === 'workbook') {
         svg += `<rect x="${px}" y="${py}" width="${cellSize}" height="${cellSize}" fill="none" stroke="#999999" stroke-width="${Math.max(1, cellSize * 0.04)}"/>`;
         if (currentShape.index > 0 || (settings.mysteryMode && currentShape.index === 0)) {
-          const code = currentShape.index === 0 ? '0' : (settings.densityCodes ? settings.densityCodes[currentShape.index - 1] : currentShape.code);
-          svg += `<text x="${cx}" y="${cy + cellSize * 0.05}" fill="black" font-family="sans-serif" font-weight="bold" font-size="${cellSize * 0.55}px" text-anchor="middle" dominant-baseline="central">${code || currentShape.code}</text>`;
+          const code = currentShape.index === 0 ? '0' : (settings.mysteryMode ? currentShape.index.toString() : (settings.densityCodes ? settings.densityCodes[currentShape.index - 1] : currentShape.code));
+          svg += `<text x="${cx}" y="${cy + cellSize * 0.05}" fill="black" font-family="sans-serif" font-weight="bold" font-size="${cellSize * 0.55}px" text-anchor="middle" dominant-baseline="central">${code}</text>`;
         }
       } else {
         if (renderStyle === 'pixels') {
@@ -2471,7 +2471,7 @@ export default function App() {
                                 ? 'ring-2 ring-black shadow-sm scale-110' 
                                 : 'hover:bg-neutral-200 hover:scale-105'
                             }`}
-                            title={`Paint with ${code}`}
+                            title={`Paint with ${imgObj.settings.mysteryMode ? (idx + 1).toString() : code}`}
                           >
                             <div className="scale-[1.1] origin-center flex items-center justify-center pointer-events-none">
                               <LegendIcon index={idx + 1} color={imgObj.settings.inkColor} renderStyle={imgObj.settings.renderStyle} />
