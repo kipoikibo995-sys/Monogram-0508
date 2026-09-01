@@ -17,6 +17,7 @@ export type ImageSettings = {
   trimSize: "8.5x11" | "6x9" | "8.5x8.5";
   gutterMargin: number;
   densityCodes: string[];
+  mysteryMode?: boolean;
   overrides?: Record<string, number>;
   overridesHistory?: Record<string, number>[];
 };

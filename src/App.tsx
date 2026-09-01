@@ -40,7 +40,8 @@ const defaultSettings: ImageSettings = {
   pixelShape: 'square',
   useDithering: false,
   useSmoothing: true,
-  densityCodes: ['.', '1', '2', '3', '4', '5']
+  densityCodes: ['.', '1', '2', '3', '4', '5'],
+  mysteryMode: false
 };
 
 
@@ -234,7 +235,8 @@ const drawCell = (
   densityCodes: string[] = ['.', '1', '2', '3', '4', '5'],
   overrideShapeIndex?: number,
   pixelShape: 'square' | 'circle' | 'triangle' | 'hexagon' | 'diamond' = 'square',
-  pass: 'all' | 'fill' | 'stroke' | 'text' = 'all'
+  pass: 'all' | 'fill' | 'stroke' | 'text' = 'all',
+  mysteryMode: boolean = false
 ) => {
   const cx = x + size / 2;
   const cy = y + size / 2;
@@ -300,12 +302,13 @@ const drawCell = (
     }
     
     if (pass === 'all' || pass === 'text') {
-      if (shape.index > 0) {
+      if (shape.index > 0 || (mysteryMode && shape.index === 0)) {
         ctx.fillStyle = '#000000'; 
         ctx.font = `bold ${size * 0.55}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(densityCodes[shape.index - 1] || shape.code, textX, textY);
+        const displayChar = shape.index === 0 ? '0' : (densityCodes[shape.index - 1] || shape.code);
+        ctx.fillText(displayChar, textX, textY);
       }
     }
   } else {
@@ -471,8 +474,8 @@ const generateSVG = (img: HTMLImageElement, settings: ImageSettings): string => 
 
       if (viewMode === 'workbook') {
         svg += `<rect x="${px}" y="${py}" width="${cellSize}" height="${cellSize}" fill="none" stroke="#999999" stroke-width="${Math.max(1, cellSize * 0.04)}"/>`;
-        if (currentShape.index > 0) {
-          const code = settings.densityCodes ? settings.densityCodes[currentShape.index - 1] : currentShape.code;
+        if (currentShape.index > 0 || (settings.mysteryMode && currentShape.index === 0)) {
+          const code = currentShape.index === 0 ? '0' : (settings.densityCodes ? settings.densityCodes[currentShape.index - 1] : currentShape.code);
           svg += `<text x="${cx}" y="${cy + cellSize * 0.05}" fill="black" font-family="sans-serif" font-weight="bold" font-size="${cellSize * 0.55}px" text-anchor="middle" dominant-baseline="central">${code || currentShape.code}</text>`;
         }
       } else {
@@ -789,7 +792,7 @@ export default function App() {
             row * actualCellSize + marginPx + coordOffset,
             actualCellSize,
             newPixel, col, row,
-            settings.inkColor, settings.inkThickness, settings.viewMode, settings.renderStyle, settings.densityCodes, activePaint.shapeIndex, settings.pixelShape
+            settings.inkColor, settings.inkThickness, settings.viewMode, settings.renderStyle, settings.densityCodes, activePaint.shapeIndex, settings.pixelShape, 'all', settings.mysteryMode
           );
           
           ctx.restore();
@@ -896,7 +899,7 @@ export default function App() {
   const activeSettings = images[selectedIndex]?.settings || defaultSettings;
   const {
     gridCols, cellSize, brightness, contrast, gamma, inkColor, inkThickness, 
-    showBgGrid, showCoordinates, viewMode, renderStyle, useDithering, useSmoothing, pageMargin, trimSize, gutterMargin
+    showBgGrid, showCoordinates, viewMode, renderStyle, useDithering, useSmoothing, pageMargin, trimSize, gutterMargin, mysteryMode
   } = activeSettings;
 
   const updateSetting = <K extends keyof ImageSettings>(key: K, value: ImageSettings[K], targetIndex: number = selectedIndex) => {
@@ -932,6 +935,7 @@ export default function App() {
   const setInkThickness = (v: number) => updateSetting('inkThickness', v);
   const setShowBgGrid = (v: boolean) => updateSetting('showBgGrid', v);
   const setShowCoordinates = (v: boolean) => updateSetting('showCoordinates', v);
+  const setMysteryMode = (v: boolean) => updateSetting('mysteryMode', v);
   const setViewMode = (v: 'workbook'|'solution') => updateSetting('viewMode', v);
   const setRenderStyle = (v: 'shapes'|'pixels') => updateSetting('renderStyle', v);
   const setPixelShape = (v: 'square' | 'circle' | 'triangle' | 'hexagon' | 'diamond') => updateSetting('pixelShape', v);
@@ -1217,7 +1221,7 @@ export default function App() {
             ctx, 
             x * actualCellSize, y * actualCellSize, actualCellSize, 
             grayscale, x, y, 
-            inkColor, actualThickness, currentViewMode, renderStyle, settings.densityCodes, undefined, settings.pixelShape, pass
+            inkColor, actualThickness, currentViewMode, renderStyle, settings.densityCodes, undefined, settings.pixelShape, pass, settings.mysteryMode
           );
         }
       }
@@ -1938,6 +1942,12 @@ export default function App() {
                       Solution
                     </button>
                   </div>
+
+                  {viewMode === 'workbook' && (
+                    <div className="mt-2">
+                      <Toggle label="Mystery Mode" checked={!!mysteryMode} onChange={setMysteryMode} tooltip="Fills empty background cells with '0' to make the final image harder to guess before coloring." />
+                    </div>
+                  )}
                 </div>
               </Accordion>
               
