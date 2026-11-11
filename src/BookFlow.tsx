@@ -50,7 +50,7 @@ interface BookFlowProps {
   renderStyle?: 'shapes' | 'pixels';
 }
 
-export const BookFlow: React.FC<BookFlowProps> = ({ project, onUpdateProject, activePage, onExport, userTier = 'free', renderStyle = 'shapes' }) => {
+export const BookFlow: React.FC<BookFlowProps> = ({ project, onUpdateProject, activePage, onExport, userTier = 'free', renderStyle = 'shapes' as 'shapes' | 'pixels' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
