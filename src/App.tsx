@@ -949,7 +949,7 @@ export default function App() {
   const [exportProgress, setExportProgress] = useState(0);
   const [exportStatus, setExportStatus] = useState('');
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
-  const [exportScale, setExportScale] = useState(3);
+  const [exportScale, setExportScale] = useState(4);
   
   // Optimization settings
   const [layoutMode, setLayoutMode] = useState<'vertical' | 'grid'>('vertical');
@@ -1560,9 +1560,9 @@ export default function App() {
         
         const processed = processImageForPdf(images[i].img, images[i].settings);
         
-        // Dynamically calculate scale: target max ~1500px width for standard letter page
+        // Target ~300 DPI print quality: printable width of a letter page is ~7.4in -> ~2400px
         const baseWidth = images[i].settings.gridCols * (images[i].settings.cellSize || 12);
-        const dynamicScale = Math.min(2, 1500 / baseWidth);
+        const dynamicScale = Math.min(4, 2400 / baseWidth);
         
         // Generate high-res raster image for PDF to prevent browser freezing
         const tmpCanvas = document.createElement('canvas');
