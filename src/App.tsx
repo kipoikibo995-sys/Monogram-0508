@@ -1567,13 +1567,13 @@ export default function App() {
         // Generate high-res raster image for PDF to prevent browser freezing
         const tmpCanvas = document.createElement('canvas');
         
-        // Generate Workbook image (Using JPEG with 0.45 quality to save massive amount of space)
+        // Generate Workbook image. PNG (lossless) compresses black-and-white line art far better than JPEG (~6x smaller) and stays crisp
         renderArt(tmpCanvas, images[i].img, { ...images[i].settings, viewMode: 'workbook' }, dynamicScale);
-        processed.workbookDataUrl = tmpCanvas.toDataURL('image/jpeg', 0.45);
+        processed.workbookDataUrl = tmpCanvas.toDataURL('image/png');
         
         // Generate Solution image
         renderArt(tmpCanvas, images[i].img, { ...images[i].settings, viewMode: 'solution' }, dynamicScale);
-        processed.solutionDataUrl = tmpCanvas.toDataURL('image/jpeg', 0.45);
+        processed.solutionDataUrl = tmpCanvas.toDataURL('image/png');
         
         processedImages.push(processed);
       }
